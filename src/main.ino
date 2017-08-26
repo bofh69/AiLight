@@ -54,6 +54,16 @@ void loadFactoryDefaults() {
 
   // Configuration defaults
   os_strcpy(cfg.hostname, getDeviceID());
+
+  cfg.holfuy_enabled = HOLFUY_ENABLED;
+  os_strcpy(cfg.holfuy_url, HOLFUY_URL);
+  os_strcpy(cfg.holfuy_pass, HOLFUY_PASS);
+  cfg.holfuy_id = HOLFUY_ID;
+  cfg.holfuy_wind_min = HOLFUY_WIND_MIN;
+  cfg.holfuy_wind_max = HOLFUY_WIND_MAX;
+  cfg.holfuy_dir_from = HOLFUY_DIR_FROM;
+  cfg.holfuy_dir_to = HOLFUY_DIR_TO;
+
   cfg.mqtt_port = MQTT_PORT;
   os_strcpy(cfg.mqtt_server, MQTT_SERVER);
   os_strcpy(cfg.mqtt_user, MQTT_USER);
@@ -106,6 +116,7 @@ void setup() {
 #endif
 
   setupLight();
+  setupHolfuy();
   setupMQTT();
   setupWiFi();
   setupOTA();
@@ -120,4 +131,5 @@ void setup() {
 void loop() {
   loopOTA();
   loopLight();
+  if(cfg.holfuy_enabled) loopHolfuy();
 }

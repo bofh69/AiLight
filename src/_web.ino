@@ -12,6 +12,8 @@
  * Copyright (c) 2016 - 2017 Sacha Telgenhof
  */
 
+#define HTTP_PREFIX "http://"
+
 /**
  * @brief Check whether the requestor is authorized using the requested API
  * endpoint
@@ -95,6 +97,19 @@ void wsStart(uint8_t id) {
   settings[KEY_HOSTNAME] = cfg.hostname;
   settings[KEY_WIFI_SSID] = cfg.wifi_ssid;
   settings[KEY_WIFI_PSK] = cfg.wifi_psk;
+
+  settings[KEY_HOLFUY_ENABLED] = cfg.holfuy_enabled;
+  if(os_strncmp(HTTP_PREFIX, cfg.holfuy_url, sizeof(HTTP_PREFIX)-1)) {
+      os_strcpy(cfg.holfuy_url, HTTP_PREFIX);
+  }
+  settings[KEY_HOLFUY_URL] = cfg.holfuy_url;
+  settings[KEY_HOLFUY_PASS] = cfg.holfuy_pass;
+  settings[KEY_HOLFUY_ID] = cfg.holfuy_id;
+  settings[KEY_HOLFUY_WIND_MIN] = cfg.holfuy_wind_min;
+  settings[KEY_HOLFUY_WIND_MAX] = cfg.holfuy_wind_max;
+  settings[KEY_HOLFUY_DIR_FROM] = cfg.holfuy_dir_from;
+  settings[KEY_HOLFUY_DIR_TO] = cfg.holfuy_dir_to;
+
   settings[KEY_MQTT_SERVER] = cfg.mqtt_server;
   settings[KEY_MQTT_PORT] = cfg.mqtt_port;
   settings[KEY_MQTT_USER] = cfg.mqtt_user;
@@ -155,6 +170,7 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
 
   // Process new settings
   if (root.containsKey(KEY_SETTINGS) && root[KEY_SETTINGS].is<JsonObject &>()) {
+    bool holfuy_changed = false;
     bool mqtt_changed = false;
     bool wifi_changed = false;
     settings_changed = true;
@@ -171,6 +187,81 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
             false; // Since hostname is used as name in HA
 
         needRestart = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_ENABLED)) {
+      bool holfuy_enabled = settings[KEY_HOLFUY_ENABLED];
+      if (cfg.holfuy_enabled != holfuy_enabled) {
+        cfg.holfuy_enabled = holfuy_enabled;
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_URL)) {
+      const char *holfuy_url = settings[KEY_HOLFUY_URL];
+      // TODO: Validate URL
+      if (os_strcmp(cfg.holfuy_url, holfuy_url) != 0) {
+        os_strcpy(cfg.holfuy_url, holfuy_url);
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_PASS)) {
+      const char *holfuy_pass = settings[KEY_HOLFUY_PASS];
+      if (os_strcmp(cfg.holfuy_pass, holfuy_pass) != 0) {
+        os_strcpy(cfg.holfuy_pass, holfuy_pass);
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_ID)) {
+      uint16_t holfuy_id = (os_strlen(settings[KEY_HOLFUY_ID]) > 0)
+                               ? settings[KEY_HOLFUY_ID]
+                               : HOLFUY_ID;
+      if (cfg.holfuy_id != holfuy_id) {
+        cfg.holfuy_id = holfuy_id;
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_WIND_MIN)) {
+      uint16_t holfuy_wind_min = (os_strlen(settings[KEY_HOLFUY_WIND_MIN]) > 0)
+                               ? settings[KEY_HOLFUY_WIND_MIN]
+                               : HOLFUY_WIND_MIN;
+      if (cfg.holfuy_wind_min != holfuy_wind_min) {
+        cfg.holfuy_wind_min = holfuy_wind_min;
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_WIND_MAX)) {
+      uint16_t holfuy_wind_max = (os_strlen(settings[KEY_HOLFUY_WIND_MAX]) > 0)
+                               ? settings[KEY_HOLFUY_WIND_MAX]
+                               : HOLFUY_WIND_MAX;
+      if (cfg.holfuy_wind_max != holfuy_wind_max) {
+        cfg.holfuy_wind_max = holfuy_wind_max;
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_DIR_FROM)) {
+      uint16_t holfuy_dir_from = (os_strlen(settings[KEY_HOLFUY_DIR_FROM]) > 0)
+                               ? settings[KEY_HOLFUY_DIR_FROM]
+                               : HOLFUY_DIR_FROM;
+      if (cfg.holfuy_dir_from != holfuy_dir_from) {
+        cfg.holfuy_dir_from = holfuy_dir_from;
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_DIR_TO)) {
+      uint16_t holfuy_dir_to = (os_strlen(settings[KEY_HOLFUY_DIR_TO]) > 0)
+                               ? settings[KEY_HOLFUY_DIR_TO]
+                               : HOLFUY_DIR_TO;
+      if (cfg.holfuy_dir_to != holfuy_dir_to) {
+        cfg.holfuy_dir_to = holfuy_dir_to;
+        holfuy_changed = true;
       }
     }
 
@@ -286,15 +377,25 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
       }
     }
 
+    // Write new config, if changed:
+    if(holfuy_changed ||
+       mqtt_changed ||
+       wifi_changed) {
+      EEPROM_write(cfg);
+    }
+
+    // Reconnect to the HOLFUY broker due to new settings
+    if (holfuy_changed) {
+      // holfuy.disconnect();
+    }
+
     // Reconnect to the MQTT broker due to new settings
     if (mqtt_changed) {
-      EEPROM_write(cfg);
       mqtt.disconnect();
     }
 
     // Reconnect to WiFi due to new settings
     if (wifi_changed) {
-      EEPROM_write(cfg);
       setupWiFi();
     }
   }

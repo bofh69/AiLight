@@ -14,6 +14,7 @@
 
 // Key names as used internally and in Home Assistant
 const K_S = "state";
+const K_H = "holfuy";
 const K_BR = "brightness";
 const K_CT = "color_temp";
 const K_C = "color";
@@ -70,6 +71,14 @@ function Switch(id, du = true) {
 
     if (this.id === 'state') {
       value = (this.state) ? S_ON : S_OFF;
+    }
+
+    // Handle visibility of HA Discovery settings
+    if (this.id === K_H) {
+      /*
+      let ad = document.getElementById('holfuy_');
+      ad.style.display = (this.state) ? 'flex' : 'none';
+      */
     }
 
     // Handle visibility of HA Discovery settings
@@ -131,7 +140,6 @@ function Slider(id) {
     if (typeof(output) !== "undefined") {
       output.innerHTML = this.el.value;
     }
-
   };
 
   this._send = function() {
@@ -186,6 +194,7 @@ let wSlider = new Slider(K_W);
 let gmSwitch = new Switch(K_GM);
 let hdSwitch = new Switch(K_HD, false);
 let raSwitch = new Switch(K_RA, false);
+let hSwitch = new Switch(K_H, false);
 let hS = false;
 
 /**
@@ -260,6 +269,18 @@ function processData(data) {
         // Bind to specific DOM elements
         if (document.getElementById(s) !== null) {
           document.getElementById(s).value = data[key][s];
+        }
+
+        // Set Holfuy switch and API Key field
+        if (s === "switch_holfuy") {
+          hSwitch.setState(data[key][s]);
+
+/* TODO:
+          let ap = document.getElementById('holfuy_');
+          if (!data[key][s]) {
+            ap.style.display = "none";
+          }
+*/
         }
 
         // Set HA Discovery switch and prefix field

@@ -10,9 +10,9 @@
  * Copyright (c) 2016 - 2017 Sacha Telgenhof
  */
 
-#define APP_NAME "AiLight"
-#define APP_VERSION "0.4.1-dev"
-#define APP_AUTHOR "stelgenhof@gmail.com"
+#define APP_NAME "WindLight"
+#define APP_VERSION "0.0.1-dev"
+#define APP_AUTHOR "sebastian@bittr.nu"
 
 #define DEVICE_MANUFACTURER "Ai-Thinker"
 #define DEVICE_MODEL "RGBW Light"
@@ -40,7 +40,7 @@ extern "C" {
 #include "html.gz.h"
 
 #define EEPROM_START_ADDRESS 0
-#define INIT_HASH 0x4B
+#define INIT_HASH 0x41
 static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define RECONNECT_TIME 10
 
@@ -63,6 +63,16 @@ static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define KEY_HOSTNAME "hostname"
 #define KEY_WIFI_SSID "wifi_ssid"
 #define KEY_WIFI_PSK "wifi_psk"
+
+#define KEY_HOLFUY_ENABLED "switch_holfuy"
+#define KEY_HOLFUY_URL "holfuy_url"
+#define KEY_HOLFUY_PASS "holfuy_pass"
+#define KEY_HOLFUY_ID "holfuy_id"
+#define KEY_HOLFUY_WIND_MIN "holfuy_wind_min"
+#define KEY_HOLFUY_WIND_MAX "holfuy_wind_max"
+#define KEY_HOLFUY_DIR_FROM "holfuy_dir_from"
+#define KEY_HOLFUY_DIR_TO "holfuy_dir_to"
+
 #define KEY_MQTT_SERVER "mqtt_server"
 #define KEY_MQTT_PORT "mqtt_port"
 #define KEY_MQTT_USER "mqtt_user"
@@ -73,6 +83,7 @@ static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define KEY_MQTT_HA_USE_DISCOVERY "switch_ha_discovery"
 #define KEY_MQTT_HA_IS_DISCOVERED "mqtt_ha_is_discovered"
 #define KEY_MQTT_HA_DISCOVERY_PREFIX "mqtt_ha_discovery_prefix"
+
 #define KEY_REST_API_ENABLED "switch_rest_api"
 #define KEY_REST_API_KEY "api_key"
 
@@ -129,6 +140,15 @@ struct config_t {
   char mqtt_ha_disc_prefix[32]; // MQTT Discovery prefix for Home Assistant
   bool api;                     // REST API enabled or not
   char api_key[32];             // API Key
+
+  bool holfuy_enabled;        // Is holfuy service enabled?
+  char holfuy_url[128];       // URL - http://api.holfuy.com/live/
+  char holfuy_pass[128];      // password
+  uint16_t holfuy_id;         // Id of station - 101
+  uint16_t holfuy_wind_min;   // Minimum wind speed, m/s * 10
+  uint16_t holfuy_wind_max;   // Maximum wind speed, m/s * 10
+  uint16_t holfuy_dir_from;   // The wind direction in degrees.
+  uint16_t holfuy_dir_to;     // The wind direction in degrees.
 } cfg;
 
 // Globals for flash
