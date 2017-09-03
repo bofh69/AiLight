@@ -14,21 +14,109 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncTCPbuffer.h>
 
+#define N_SAMPLES (15)
+
 typedef enum {
     HS_IDLE,
     HS_CONNECTING,
     HS_SEND_HEADER,
     HS_RECV_HEADER,
+    HS_RECV_HEADER_CR1,
+    HS_RECV_HEADER_LF1,
+    HS_RECV_HEADER_CR2,
+    HS_RECV_HEADER_LF2,
     HS_RECV_BODY,
 } holfuy_state_t;
+static holfuy_state_t hs_state;
+static int nr_commas;
+static long tmp_nr;
+static int n_decimals;
+
+typedef struct {
+    long speed, dir;
+    float temperature;
+} sample_t;
+
+static sample_t samples[N_SAMPLES];
+static int sample_idx;
 
 static AsyncClient holfuy;
 // static AsyncTCPbuffer recv(&holfuy);
-static holfuy_state_t hs_state;
 
-static void onData(void*, AsyncClient*, void *data, size_t len)
+static void onData(void*, AsyncClient*, void *indata, size_t len)
 {
-    AiLight.setColor(0x00, 0xff, 0x00);
+    const char *data = static_cast<const char*>(indata);
+    while(len-- > 0) {
+        switch(hs_state) {
+        case HS_RECV_HEADER:
+            if(*data == '\r')
+              hs_state = HS_RECV_HEADER_CR1;
+            break;
+        case HS_RECV_HEADER_CR1:
+            if(*data == '\n')
+              hs_state = HS_RECV_HEADER_LF1;
+            else if(*data != '\r')
+              hs_state = HS_RECV_HEADER;
+            break;
+        case HS_RECV_HEADER_LF1:
+            if(*data == '\r')
+              hs_state = HS_RECV_HEADER_CR2;
+            else hs_state = HS_RECV_HEADER;
+            break;
+        case HS_RECV_HEADER_CR2:
+            if(*data == '\n') {
+              hs_state = HS_RECV_BODY;
+              nr_commas = 0;
+              tmp_nr = 0;
+              n_decimals = -100;
+            } else if(*data == '\r')
+              hs_state = HS_RECV_HEADER_CR1;
+            else hs_state = HS_RECV_HEADER;
+            break;
+        case HS_RECV_BODY:
+            if(*data == ',') {
+                switch(nr_commas++) {
+                case 4: // Windspeed #1
+                    samples[sample_idx].speed = tmp_nr;
+                    break;
+                case 5: // Windspeed #2
+                    break;
+                case 7: // Direction
+                    samples[sample_idx].dir = tmp_nr;
+                    break;
+                case 8: // Temp
+                    samples[sample_idx].temperature = tmp_nr;
+                    while(n_decimals-- > 0) {
+                        samples[sample_idx].temperature /= 10.0;
+                    }
+                    break;
+                case 9: { // ???
+                    sample_t *s = &samples[sample_idx];
+                    AiLight.setColor(s->speed & 255,
+                                     s->dir & 255,
+                                     int(s->temperature) & 255);
+                    sample_idx += 1;
+                    if(sample_idx >= N_SAMPLES) sample_idx = 0;
+                } break;
+                case 10: // preassure
+                    holfuy.close();
+                    return;
+                }
+                tmp_nr = 0;
+                n_decimals = -100;
+            } else if(*data == '.') {
+                n_decimals = 0;
+            } else if((*data >= '0') &&
+                      (*data <= '9')) {
+                // This does count leading zeros as well, but since we
+                // only care about decimals after the dot, it does not matter.
+                n_decimals++;
+                tmp_nr = tmp_nr * 10 + (*data - '0');
+            }
+            break;
+        }
+        data++;
+    }
 }
 
 void loopHolfuy()
@@ -37,15 +125,11 @@ void loopHolfuy()
     static int connection = 0;
 
     uint32_t current = millis();
-    if((lastMillis + 60000) < current) {
+    if((lastMillis + 30000) < current) {
         lastMillis = current;
 
-        AiLight.setColor(0xff, 0x00, 0x00);
-
         if(holfuy.connected()) {
-        AiLight.setColor(0x00, 0xff, 0x00);
             holfuy.close(true);
-        AiLight.setColor(0xff, 0xff, 0x00);
         }
         holfuy.onData(onData);
         connection++;
@@ -58,15 +142,10 @@ void loopHolfuy()
     case HS_CONNECTING:
         if(holfuy.connected()) {
             hs_state = HS_SEND_HEADER;
-        AiLight.setColor(0x00, 0xff, 0xff);
         }
         break;
     case HS_SEND_HEADER:
         if(holfuy.canSend()) {
-        AiLight.setColor(0x00, 0x00, 0xff);
-            char tmp[100];
-            snprintf(tmp, sizeof(tmp), "Will send (%d) request:\n", connection);
-            holfuy.write(tmp);
             // http://api.holfuy.com/live/
             char *host_start = cfg.holfuy_url;
             host_start = strstr(cfg.holfuy_url, "://");
@@ -92,20 +171,17 @@ void loopHolfuy()
             snprintf(request,
                      sizeof(request),
                      "GET %s?pw=%s&s=%d&m=CSV&su=m/s HTTP/1.1\r\n"
+                     "User-Agent: WindLight/0.0.1\r\n"
                      "Host: %s\r\n"
+                     "Request-Nr: %u\r\n"
                      "Connection: Disconnect\r\n\r\n",
-                     host_end, cfg.holfuy_pass, cfg.holfuy_id, host_start);
+                     host_end, cfg.holfuy_pass, cfg.holfuy_id, host_start, connection);
             holfuy.write(request);
+            // holfuy.send();
             hs_state = HS_RECV_HEADER;
         }
         break;
-    case HS_RECV_HEADER:
-        break;
-    case HS_RECV_BODY:
-        break;
     }
-
-        // AiLight.setColor(red, 0, 0);
 }
 
 /**
