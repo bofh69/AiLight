@@ -12,7 +12,13 @@
  */
 
 #include <ESPAsyncTCP.h>
-#include <ESPAsyncTCPbuffer.h>
+
+/* TODO:
+ * Put the http-client in its own class.
+ * Put the sample handling in its own class.
+ * Refactor.
+ * Unit tests requires subscription to PlatformIO. :-(
+ */
 
 #define N_SAMPLES (15)
 
@@ -36,12 +42,24 @@ typedef struct {
     long speed, dir;
     float temperature;
 } sample_t;
-
 static sample_t samples[N_SAMPLES];
 static int sample_idx;
+static int total_samples;
 
 static AsyncClient holfuy;
-// static AsyncTCPbuffer recv(&holfuy);
+
+static void update_light_colour()
+{
+    // TODO:
+    // Check that the wind is inside the desired range.
+    // Switch the lamp's colour to red or green depending on the result.
+    // Support for a blue state as well, when the wind has the right direction,
+    // but is too hard?
+    sample_t *s = &samples[sample_idx];
+    AiLight.setColor(s->speed & 255,
+                     s->dir & 255,
+                     int(s->temperature) & 255);
+}
 
 static void onData(void*, AsyncClient*, void *indata, size_t len)
 {
@@ -91,11 +109,9 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
                     }
                     break;
                 case 9: { // ???
-                    sample_t *s = &samples[sample_idx];
-                    AiLight.setColor(s->speed & 255,
-                                     s->dir & 255,
-                                     int(s->temperature) & 255);
-                    sample_idx += 1;
+                    update_light_colour();
+                    sample_idx++;
+                    total_samples++;
                     if(sample_idx >= N_SAMPLES) sample_idx = 0;
                 } break;
                 case 10: // preassure
@@ -119,6 +135,49 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
     }
 }
 
+void get_host_and_port(unsigned int host_len, char *host, int *port, char **path)
+{
+    char *_path;
+    int _port;
+    if(!port) port = &_port;
+    if(!path) path = &_path;
+    if(!host || !host_len) return;
+
+    *port = 80;
+    char *host_start = cfg.holfuy_url;
+    host_start = strstr(cfg.holfuy_url, "://");
+    if(host_start) {
+        host_start += 3;
+    } else {
+        host_start = cfg.holfuy_url;
+    }
+    char *host_end = strchr(host_start, ':');
+    if(!host_end)
+        host_end = strchr(host_start, '/');
+    if(host_end) {
+        unsigned int len = host_end - host_start;
+        if(len > host_len) {
+            len = host_len-1;
+        }
+        strncpy(host, host_start, len);
+        host[len] = 0;
+        if(*host_end == ':') {
+            *port = atoi(host_end+1);
+            if(!*port) *port = 80;
+            host_end = strchr(host_end, '/');
+        }
+        *path = host_end;
+    } else {
+        unsigned int len = strlen(host_start);
+        if(len > host_len) {
+            len = host_len-1;
+        }
+        strncpy(host, host_start, len);
+        host[len] = 0;
+        *path = "/";
+    }
+}
+
 void loopHolfuy()
 {
     static uint32_t lastMillis = 0;
@@ -133,7 +192,10 @@ void loopHolfuy()
         }
         holfuy.onData(onData);
         connection++;
-        holfuy.connect("192.168.0.16", 80);
+        char host[128];
+        int port;
+        get_host_and_port(sizeof(host), host, &port, NULL);
+        holfuy.connect(host, port);
         hs_state = HS_CONNECTING;
     }
 
@@ -146,27 +208,9 @@ void loopHolfuy()
         break;
     case HS_SEND_HEADER:
         if(holfuy.canSend()) {
-            // http://api.holfuy.com/live/
-            char *host_start = cfg.holfuy_url;
-            host_start = strstr(cfg.holfuy_url, "://");
-            if(host_start) {
-                host_start += 3;
-            } else {
-                host_start = cfg.holfuy_url;
-            }
-            char *host_end = strchr(host_start, '/');
             char host[128];
-            if(host_end) {
-                unsigned int len = host_end - host_start;
-                if(len > sizeof(host)) {
-                    len = sizeof(host)-1;
-                }
-                strncpy(host, host_start, len);
-                host[len] = 0;
-                host_start = host;
-            } else {
-                host_end = host_start;
-            }
+            char *path;
+            get_host_and_port(sizeof(host), host, NULL, &path);
             char request[256];
             snprintf(request,
                      sizeof(request),
@@ -175,7 +219,7 @@ void loopHolfuy()
                      "Host: %s\r\n"
                      "Request-Nr: %u\r\n"
                      "Connection: Disconnect\r\n\r\n",
-                     host_end, cfg.holfuy_pass, cfg.holfuy_id, host_start, connection);
+                     path, cfg.holfuy_pass, cfg.holfuy_id, host, connection);
             holfuy.write(request);
             // holfuy.send();
             hs_state = HS_RECV_HEADER;
