@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bofh69/AiLight.svg?branch=master)](https://travis-ci.org/bofh69/AiLight)
+
 This is a fork of AiLight that is supposed to set the lamp's colour from
 the results from weather stations.
 
