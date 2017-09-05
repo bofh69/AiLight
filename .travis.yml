@@ -40,7 +40,7 @@ script:
     - cp platformio.example.ini platformio.ini
     - cp src/config.example.h src/config.h
     - echo "#define html_gz_len 0" > src/html.gz.h
-    - echo "const uint8_t html_gz[] PROGMEM = {}" >> src/html.gz.h
+    - echo "const uint8_t html_gz[] PROGMEM = {};" >> src/html.gz.h
     - platformio run
 
 #
