@@ -13,7 +13,7 @@
 /**
  * Light
  * ---------------------------
- * Use the below variables to set the behaviour of your Ai-Thinker RGBW
+ * Use the below variables to set the default behaviour of your Ai-Thinker RGBW
  * Light. These will be used as the factory defaults of your device.
  */
 #define LIGHT_STATE false
@@ -24,7 +24,7 @@
 #define LIGHT_COLOR_BLUE 64
 #define LIGHT_COLOR_WHITE 0
 
-#define HOSTNAME "AiLight"
+#define HOSTNAME "WindLight"
 #define ADMIN_PASSWORD "hinotori"
 
 /**
@@ -36,7 +36,7 @@
 /**
  * WiFi
  * ---------------------------
- * Use the below variables to set WiFi settings of your Ai-Thinker
+ * Use the below variables to set the default WiFi settings of your Ai-Thinker
  * RGBW Light. These will be used as the factory defaults of your device. If no
  * SSID/PSK are provided, your Ai-Thinker RGBW light will start in AP mode.
  */
@@ -45,9 +45,23 @@
 #define WIFI_OUTPUT_POWER 20.5 // 20.5 is the maximum output power
 
 /**
+ * Holfuy
+ * ---------------------------
+ * TODO: description
+ */
+#define HOLFUY_ENABLED  false
+#define HOLFUY_URL      "http://api.holfuy.com/live/"
+#define HOLFUY_PASS     "pass"
+#define HOLFUY_ID       101
+#define HOLFUY_WIND_MIN 30
+#define HOLFUY_WIND_MAX 75
+#define HOLFUY_DIR_FROM 270
+#define HOLFUY_DIR_TO   30
+
+/**
  * MQTT
  * ---------------------------
- * Use the below variables to set MQTT settings of your Ai-Thinker
+ * Use the below variables to set the default MQTT settings of your Ai-Thinker
  * RGBW Light. These will be used as the factory defaults of your device and
  * making the connection to your Home Assistant instance. Most of these settings
  * can also be changed in the UI environment.
