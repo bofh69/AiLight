@@ -5,6 +5,17 @@ the results from weather stations.
 
 The initial version will only support Holfuy weather stations.
 
+## building
+Install atom, install the platform-ide plugin.
+
+Copy platformio.exmaple.ini to platform.ini and update it as needed.
+
+Copy src/config.example.h to src/config.h and update it as needed.
+
+Install npm (part of node.js) and run npm install gulp (needed for the build).
+
+Open the project's dir in atom and build it via the platform.io plugin.
+
 ## Testing
 
 This bash command is used to simulate the response from a holfuy server:
