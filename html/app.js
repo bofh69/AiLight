@@ -174,8 +174,14 @@ function Slider(id) {
       this.el.addEventListener("change", sendRGB.bind(this), {
         passive: true
       });
+      this.el.addEventListener("input", sendRGB.bind(this), {
+        passive: true
+      });
     } else {
       this.el.addEventListener("change", this._send.bind(this), {
+        passive: true
+      });
+      this.el.addEventListener("input", this._send.bind(this), {
         passive: true
       });
     }
@@ -206,9 +212,10 @@ let hS = false;
  *
  * @return void
  */
-function sendRGB() {
+function sendRGB(e) {
   let msg = {
-    'state': S_ON
+    'state': S_ON,
+    'type': e.type
   };
 
   msg[K_C] = {};
@@ -342,10 +349,14 @@ function processData(data) {
       gSlider.setValue(data[key][K_G]);
       bSlider.setValue(data[key][K_B]);
 
+      function toHex2(v) {
+        return ("0" + (v.toString(16))).substr(-2);
+      }
+
       colour_lamp.value = "#" +
-          data[key][K_R].toString(16) +
-          data[key][K_G].toString(16) +
-          data[key][K_B].toString(16);
+          toHex2(data[key][K_R]) +
+          toHex2(data[key][K_G]) +
+          toHex2(data[key][K_B]);
     }
 
     if (key === K_W) {
