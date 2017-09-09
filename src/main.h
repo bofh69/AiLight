@@ -40,7 +40,7 @@ extern "C" {
 #include "html.gz.h"
 
 #define EEPROM_START_ADDRESS 0
-#define INIT_HASH 0x41
+#define INIT_HASH 0x42
 static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define RECONNECT_TIME 10
 
@@ -145,8 +145,8 @@ struct config_t {
   char holfuy_url[128];       // URL - http://api.holfuy.com/live/
   char holfuy_pass[128];      // password
   uint16_t holfuy_id;         // Id of station - 101
-  uint16_t holfuy_wind_min;   // Minimum wind speed, m/s * 10
-  uint16_t holfuy_wind_max;   // Maximum wind speed, m/s * 10
+  float holfuy_wind_min;      // Minimum wind speed, m/s
+  float holfuy_wind_max;      // Maximum wind speed, m/s
   uint16_t holfuy_dir_from;   // The wind direction in degrees.
   uint16_t holfuy_dir_to;     // The wind direction in degrees.
 } cfg;

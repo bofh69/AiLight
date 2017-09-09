@@ -226,7 +226,7 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
     }
 
     if (settings.containsKey(KEY_HOLFUY_WIND_MIN)) {
-      uint16_t holfuy_wind_min = (os_strlen(settings[KEY_HOLFUY_WIND_MIN]) > 0)
+      float holfuy_wind_min = (os_strlen(settings[KEY_HOLFUY_WIND_MIN]) > 0)
                                ? settings[KEY_HOLFUY_WIND_MIN]
                                : HOLFUY_WIND_MIN;
       if (cfg.holfuy_wind_min != holfuy_wind_min) {
@@ -236,7 +236,7 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
     }
 
     if (settings.containsKey(KEY_HOLFUY_WIND_MAX)) {
-      uint16_t holfuy_wind_max = (os_strlen(settings[KEY_HOLFUY_WIND_MAX]) > 0)
+      float holfuy_wind_max = (os_strlen(settings[KEY_HOLFUY_WIND_MAX]) > 0)
                                ? settings[KEY_HOLFUY_WIND_MAX]
                                : HOLFUY_WIND_MAX;
       if (cfg.holfuy_wind_max != holfuy_wind_max) {

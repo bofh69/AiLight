@@ -55,8 +55,8 @@
 #define HOLFUY_URL      "http://api.holfuy.com/live/"
 #define HOLFUY_PASS     "pass"
 #define HOLFUY_ID       101
-#define HOLFUY_WIND_MIN 30
-#define HOLFUY_WIND_MAX 75
+#define HOLFUY_WIND_MIN 3.0
+#define HOLFUY_WIND_MAX 7.5
 #define HOLFUY_DIR_FROM 270
 #define HOLFUY_DIR_TO   30
 
