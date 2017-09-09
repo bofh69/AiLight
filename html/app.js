@@ -169,22 +169,12 @@ function Slider(id) {
       passive: true
     });
 
-    let rgb = [K_R, K_G, K_B];
-    if (rgb.includes(this.id)) {
-      this.el.addEventListener("change", sendRGB.bind(this), {
-        passive: true
-      });
-      this.el.addEventListener("input", sendRGB.bind(this), {
-        passive: true
-      });
-    } else {
-      this.el.addEventListener("change", this._send.bind(this), {
-        passive: true
-      });
-      this.el.addEventListener("input", this._send.bind(this), {
-        passive: true
-      });
-    }
+    this.el.addEventListener("change", this._send.bind(this), {
+      passive: true
+    });
+    this.el.addEventListener("input", this._send.bind(this), {
+      passive: true
+    });
   };
 }).call(Slider.prototype);
 
@@ -197,9 +187,6 @@ let websock;
 let stSwitch = new Switch(K_S);
 let brSlider = new Slider(K_BR);
 let ctSlider = new Slider(K_CT);
-let rSlider = new Slider(K_R);
-let gSlider = new Slider(K_G);
-let bSlider = new Slider(K_B);
 let wSlider = new Slider(K_W);
 let gmSwitch = new Switch(K_GM);
 let hdSwitch = new Switch(K_HD, false);
@@ -345,10 +332,6 @@ function processData(data) {
     }
 
     if (key === 'color') {
-      rSlider.setValue(data[key][K_R]);
-      gSlider.setValue(data[key][K_G]);
-      bSlider.setValue(data[key][K_B]);
-
       function toHex2(v) {
         return ("0" + (v.toString(16))).substr(-2);
       }
