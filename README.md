@@ -1,11 +1,11 @@
 [![Build Status](https://travis-ci.org/bofh69/AiLight.svg?branch=master)](https://travis-ci.org/bofh69/AiLight)
 
-This is a fork of AiLight that is supposed to set the lamp's colour from
-the results from weather stations.
+This is a fork of AiLight that sets the lamp's colour from the results from holfuy weather stations.
 
-The initial version will only support Holfuy weather stations.
+## Status
+The code works, but it is a bit rough.
 
-## building
+## Building
 Install atom, install the platform-ide plugin.
 
 Copy platformio.exmaple.ini to platform.ini and update it as needed.
