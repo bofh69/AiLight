@@ -49,6 +49,7 @@ static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define KEY_DEVICE "d"
 
 #define KEY_STATE "state"
+#define KEY_TYPE "type"
 #define KEY_BRIGHTNESS "brightness"
 #define KEY_WHITE "white_value"
 #define KEY_COLORTEMP "color_temp"

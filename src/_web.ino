@@ -435,7 +435,10 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
   cfg.color = {AiLight.getColor().red, AiLight.getColor().green,
                AiLight.getColor().blue, AiLight.getColor().white};
   cfg.gamma = AiLight.hasGammaCorrection();
-  EEPROM_write(cfg);
+  if (!root.containsKey(KEY_TYPE) ||
+       root[KEY_TYPE] != "input") {
+    EEPROM_write(cfg);
+  }
 
   if (needRestart) {
     ESP.restart();

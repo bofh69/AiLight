@@ -182,6 +182,10 @@ function Slider(id) {
   };
 }).call(Slider.prototype);
 
+let colour_lamp = document.getElementById("colour_lamp");
+colour_lamp.addEventListener("change", sendRGB2.bind(this), { passive: true});
+colour_lamp.addEventListener("input", sendRGB2.bind(this), { passive: true});
+
 // Globals
 let websock;
 let stSwitch = new Switch(K_S);
@@ -211,6 +215,21 @@ function sendRGB() {
   msg[K_C][rSlider.id] = rSlider.getValue();
   msg[K_C][gSlider.id] = gSlider.getValue();
   msg[K_C][bSlider.id] = bSlider.getValue();
+
+  websock.send(JSON.stringify(msg));
+}
+
+function sendRGB2(e) {
+  let msg = {
+    'state': S_ON,
+    'type': e.type
+  };
+
+
+  msg[K_C] = {};
+  msg[K_C][K_R] = parseInt(colour_lamp.value.substring(1,3), 16);
+  msg[K_C][K_G] = parseInt(colour_lamp.value.substring(3,5), 16);
+  msg[K_C][K_B] = parseInt(colour_lamp.value.substring(5,7), 16);
 
   websock.send(JSON.stringify(msg));
 }
@@ -322,6 +341,11 @@ function processData(data) {
       rSlider.setValue(data[key][K_R]);
       gSlider.setValue(data[key][K_G]);
       bSlider.setValue(data[key][K_B]);
+
+      colour_lamp.value = "#" +
+          data[key][K_R].toString(16) +
+          data[key][K_G].toString(16) +
+          data[key][K_B].toString(16);
     }
 
     if (key === K_W) {
