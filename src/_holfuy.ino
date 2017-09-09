@@ -37,14 +37,20 @@ static int nr_commas;
 static long tmp_nr;
 static int n_decimals;
 
+template <typename Sample_t>
+class EvaluateSamples {
+public:
+    virtual void inspect(Sample_t sample);
+};
+
 class Samples {
 public:
-    enum colour_t {
-        YELLOW,
-        GREEN,
-        RED,
-        BLUE,
-    };
+    Samples(int n_samples) {
+        samples = new Sample[n_samples];
+    }
+    ~Samples() {
+        delete[] samples;
+    }
 
     struct Sample {
         float speed, dir, temperature;
@@ -55,52 +61,73 @@ public:
         samples[sample_idx].dir = dir;
         samples[sample_idx].temperature = temperature;
         ++total_samples;
-        if(++sample_idx >= HOLFUY_SAMPLES_TO_KEEP)
+        if(++sample_idx >= n_samples)
             sample_idx = 0;
     }
     const Sample &latest_sample() {
         int l = sample_idx-1;
-        if(l < 0) sample_idx = HOLFUY_SAMPLES_TO_KEEP - 1;
+        if(l < 0) sample_idx = n_samples - 1;
         return samples[l];
     }
 
-    const colour_t current_colour() {
+    void const evaluate_samples(EvaluateSamples<const Sample &> &evaluator) {
         int max = total_samples;
-        if(max > HOLFUY_SAMPLES_TO_KEEP)
-            max = HOLFUY_SAMPLES_TO_KEEP;
-        enum colour_t retval = YELLOW;
+        if(max > n_samples)
+            max = n_samples;
 
         for(int i = 0; i < max; i++) {
             const Sample &s = samples[i];
-            enum colour_t tmp = sample_within_direction(s) ? GREEN : RED;
-            if(s.speed < cfg.holfuy_wind_min) tmp = RED;
-            if(s.speed > cfg.holfuy_wind_max)
-                tmp = (tmp != RED) ? BLUE : RED;
-            switch(tmp) {
-            case GREEN:
-                if(retval == YELLOW)
-                    retval = GREEN;
-                break;
-            case RED:
-                retval = RED;
-                break;
-            case BLUE:
-                if(retval != RED)
-                   retval = BLUE;
-                break;
-            case YELLOW:
-                break; /* Can't happen. */
-            }
+            evaluator.inspect(s);
         }
-
-        return retval;
     }
+
 private:
-    Sample samples[HOLFUY_SAMPLES_TO_KEEP];
+    int n_samples;
+    Sample *samples;
     int sample_idx;
     int total_samples;
+};
 
-    bool sample_within_direction(const Sample &s) {
+static Samples samples(HOLFUY_SAMPLES_TO_KEEP);
+
+class SamplesToColour : public EvaluateSamples<const Samples::Sample &> {
+public:
+    enum colour_t {
+        YELLOW,
+        GREEN,
+        RED,
+        BLUE,
+    };
+
+    virtual void inspect(const Samples::Sample &s) {
+        enum colour_t tmp = sample_within_direction(s) ? GREEN : RED;
+        if(s.speed < cfg.holfuy_wind_min) tmp = RED;
+        if(s.speed > cfg.holfuy_wind_max)
+            tmp = (tmp != RED) ? BLUE : RED;
+        switch(tmp) {
+        case GREEN:
+            if(colour == YELLOW)
+                colour = GREEN;
+            break;
+        case RED:
+            colour = RED;
+            break;
+        case BLUE:
+            if(colour != RED)
+               colour = BLUE;
+            break;
+        case YELLOW:
+            break; /* Can't happen. */
+        }
+    }
+
+    colour_t get_result() {
+        return colour;
+    }
+private:
+    colour_t colour = YELLOW;
+
+    bool sample_within_direction(const Samples::Sample &s) {
         if(cfg.holfuy_dir_from < cfg.holfuy_dir_to) {
             return (s.dir >= cfg.holfuy_dir_from) &&
                    (s.dir <= cfg.holfuy_dir_to);
@@ -109,21 +136,20 @@ private:
                    (s.dir <= cfg.holfuy_dir_to);
         }
     }
-
 };
-
-static Samples samples;
 
 static AsyncClient holfuy;
 
 static void update_light_colour()
 {
-    auto colour = samples.current_colour();
+    SamplesToColour stc;
+    samples.evaluate_samples(stc);
+    auto colour = stc.get_result();
     switch(colour) {
-    case Samples::YELLOW: AiLight.setColor(255, 255, 0); break;
-    case Samples::GREEN: AiLight.setColor(0, 255, 0); break;
-    case Samples::RED: /* Fall through */
-    case Samples::BLUE: AiLight.setColor(255, 0, 0); break;
+    case SamplesToColour::YELLOW: AiLight.setColor(255, 255, 0); break;
+    case SamplesToColour::GREEN: AiLight.setColor(0, 255, 0); break;
+    case SamplesToColour::RED: AiLight.setColor(255, 0, 0); break;
+    case SamplesToColour::BLUE: AiLight.setColor(0, 0, 255); break;
     }
 }
 
