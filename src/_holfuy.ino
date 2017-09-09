@@ -1,7 +1,8 @@
 /**
  * Ai-Thinker RGBW Light Firmware - Holfuy Module
  *
- * TODO - description here.
+ * A module to connect to a holfuy weather station and then set
+ * the light colour from the wind speed & direction or the temperature.
  *
  * This file is part of the Ai-Thinker RGBW Light Firmware.
  * For the full copyright and license information, please view the LICENSE
@@ -15,12 +16,10 @@
 
 /* TODO:
  * Put the http-client in its own class.
- * Put the sample handling in its own class.
- * Refactor.
+ * Put the body-parser in its own class.
+ * Add support for temperature reporting.
  * Unit tests requires subscription to PlatformIO. :-(
  */
-
-#define N_SAMPLES (15)
 
 typedef enum {
     HS_IDLE,
@@ -30,42 +29,119 @@ typedef enum {
     HS_RECV_HEADER_CR1,
     HS_RECV_HEADER_LF1,
     HS_RECV_HEADER_CR2,
-    HS_RECV_HEADER_LF2,
     HS_RECV_BODY,
 } holfuy_state_t;
 static holfuy_state_t hs_state;
+
 static int nr_commas;
 static long tmp_nr;
 static int n_decimals;
 
-typedef struct {
-    long speed, dir;
-    float temperature;
-} sample_t;
-static sample_t samples[N_SAMPLES];
-static int sample_idx;
-static int total_samples;
+class Samples {
+public:
+    enum colour_t {
+        YELLOW,
+        GREEN,
+        RED,
+        BLUE,
+    };
+
+    struct Sample {
+        long speed, dir;
+        float temperature;
+    };
+
+    void add_sample(long speed, long dir, float temperature) {
+        samples[sample_idx].speed = speed;
+        samples[sample_idx].dir = dir;
+        samples[sample_idx].temperature = temperature;
+        ++total_samples;
+        if(++sample_idx >= HOLFUY_SAMPLES_TO_KEEP)
+            sample_idx = 0;
+    }
+    const Sample &latest_sample() {
+        int l = sample_idx-1;
+        if(l < 0) sample_idx = HOLFUY_SAMPLES_TO_KEEP - 1;
+        return samples[l];
+    }
+
+    const colour_t current_colour() {
+        int max = total_samples;
+        if(max > HOLFUY_SAMPLES_TO_KEEP)
+            max = HOLFUY_SAMPLES_TO_KEEP;
+        enum colour_t retval = YELLOW;
+
+        for(int i = 0; i < max; i++) {
+            const Sample &s = samples[i];
+            enum colour_t tmp = sample_within_direction(s) ? GREEN : RED;
+            if(s.speed < cfg.holfuy_wind_min) tmp = RED;
+            if(s.speed > cfg.holfuy_wind_max)
+                tmp = (tmp != RED) ? BLUE : RED;
+            switch(tmp) {
+            case GREEN:
+                if(retval == YELLOW)
+                    retval = GREEN;
+                break;
+            case RED:
+                retval = RED;
+                break;
+            case BLUE:
+                if(retval != RED)
+                   retval = BLUE;
+                break;
+            case YELLOW:
+                break; /* Can't happen. */
+            }
+        }
+
+        return retval;
+    }
+private:
+    Sample samples[HOLFUY_SAMPLES_TO_KEEP];
+    int sample_idx;
+    int total_samples;
+
+    bool sample_within_direction(const Sample &s) {
+        if(cfg.holfuy_dir_from < cfg.holfuy_dir_to) {
+            return (s.dir >= cfg.holfuy_dir_from) &&
+                   (s.dir <= cfg.holfuy_dir_to);
+        } else {
+            return (s.dir >= cfg.holfuy_dir_from) ||
+                   (s.dir <= cfg.holfuy_dir_to);
+        }
+    }
+
+};
+
+static Samples samples;
 
 static AsyncClient holfuy;
 
 static void update_light_colour()
 {
-    // TODO:
-    // Check that the wind is inside the desired range.
-    // Switch the lamp's colour to red or green depending on the result.
-    // Support for a blue state as well, when the wind has the right direction,
-    // but is too hard?
-    sample_t *s = &samples[sample_idx];
-    AiLight.setColor(s->speed & 255,
-                     s->dir & 255,
-                     int(s->temperature) & 255);
+    auto colour = samples.current_colour();
+    switch(colour) {
+    case Samples::YELLOW: AiLight.setColor(255, 255, 0); break;
+    case Samples::GREEN: AiLight.setColor(0, 255, 0); break;
+    case Samples::RED: /* Fall through */
+    case Samples::BLUE: AiLight.setColor(255, 0, 0); break;
+    }
 }
 
 static void onData(void*, AsyncClient*, void *indata, size_t len)
 {
+    static int speed, dir;
+    static float temperature;
+
     const char *data = static_cast<const char*>(indata);
     while(len-- > 0) {
         switch(hs_state) {
+        case HS_IDLE:
+        case HS_CONNECTING:
+        case HS_SEND_HEADER:
+            /* Should not be able to happen. */
+            holfuy.close();
+            break;
         case HS_RECV_HEADER:
             if(*data == '\r')
               hs_state = HS_RECV_HEADER_CR1;
@@ -95,24 +171,22 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
             if(*data == ',') {
                 switch(nr_commas++) {
                 case 4: // Windspeed #1
-                    samples[sample_idx].speed = tmp_nr;
+                    speed = tmp_nr;
                     break;
                 case 5: // Windspeed #2
                     break;
                 case 7: // Direction
-                    samples[sample_idx].dir = tmp_nr;
+                    dir = tmp_nr;
                     break;
                 case 8: // Temp
-                    samples[sample_idx].temperature = tmp_nr;
+                    temperature = tmp_nr;
                     while(n_decimals-- > 0) {
-                        samples[sample_idx].temperature /= 10.0;
+                        temperature /= 10.0;
                     }
                     break;
                 case 9: { // ???
+                    samples.add_sample(speed, dir, temperature);
                     update_light_colour();
-                    sample_idx++;
-                    total_samples++;
-                    if(sample_idx >= N_SAMPLES) sample_idx = 0;
                 } break;
                 case 10: // preassure
                     holfuy.close();
@@ -135,9 +209,9 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
     }
 }
 
-void get_host_and_port(unsigned int host_len, char *host, int *port, char **path)
+void get_host_and_port(unsigned int host_len, char *host, int *port, const char ** path)
 {
-    char *_path;
+    const char *_path;
     int _port;
     if(!port) port = &_port;
     if(!path) path = &_path;
@@ -184,7 +258,7 @@ void loopHolfuy()
     static int connection = 0;
 
     uint32_t current = millis();
-    if((lastMillis + 30000) < current) {
+    if((lastMillis + HOLFUY_TIME_BETWEEN_SAMPLES) < current) {
         lastMillis = current;
 
         if(holfuy.connected()) {
@@ -200,7 +274,14 @@ void loopHolfuy()
     }
 
     switch(hs_state) {
-    case HS_IDLE: break;
+    case HS_IDLE:
+    case HS_RECV_HEADER:
+    case HS_RECV_HEADER_CR1:
+    case HS_RECV_HEADER_LF1:
+    case HS_RECV_HEADER_CR2:
+    case HS_RECV_BODY:
+        /* Nothing to do here */
+        break;
     case HS_CONNECTING:
         if(holfuy.connected()) {
             hs_state = HS_SEND_HEADER;
@@ -209,7 +290,7 @@ void loopHolfuy()
     case HS_SEND_HEADER:
         if(holfuy.canSend()) {
             char host[128];
-            char *path;
+            const char *path;
             get_host_and_port(sizeof(host), host, NULL, &path);
             char request[256];
             snprintf(request,
@@ -221,7 +302,6 @@ void loopHolfuy()
                      "Connection: Disconnect\r\n\r\n",
                      path, cfg.holfuy_pass, cfg.holfuy_id, host, connection);
             holfuy.write(request);
-            // holfuy.send();
             hs_state = HS_RECV_HEADER;
         }
         break;
@@ -233,4 +313,5 @@ void loopHolfuy()
  */
 void setupHolfuy()
 {
+    update_light_colour();
 }

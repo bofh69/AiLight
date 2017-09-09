@@ -47,8 +47,10 @@
 /**
  * Holfuy
  * ---------------------------
- * TODO: description
+ * The default values for the holfuy module.
  */
+#define HOLFUY_SAMPLES_TO_KEEP      15
+#define HOLFUY_TIME_BETWEEN_SAMPLES 60000 /* ms */
 #define HOLFUY_ENABLED  false
 #define HOLFUY_URL      "http://api.holfuy.com/live/"
 #define HOLFUY_PASS     "pass"
