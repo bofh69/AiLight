@@ -45,7 +45,7 @@ public:
 
 class Samples {
 public:
-    Samples(int n_samples) {
+    Samples(int n_samples) : n_samples(n_samples) {
         samples = new Sample[n_samples];
     }
     ~Samples() {
@@ -82,10 +82,9 @@ public:
     }
 
 private:
-    int n_samples;
     Sample *samples;
-    int sample_idx;
-    int total_samples;
+    int n_samples;
+    int total_samples, sample_idx;
 };
 
 static Samples samples(HOLFUY_SAMPLES_TO_KEEP);
@@ -327,7 +326,7 @@ void loopHolfuy()
                      "GET %s?pw=%s&s=%d&m=CSV&su=m/s HTTP/1.1\r\n"
                      "User-Agent: WindLight/0.0.1\r\n"
                      "Host: %s\r\n"
-                     "Request-Nr: %u\r\n"
+                     "X-Request-Nr: %u\r\n"
                      "Connection: Disconnect\r\n\r\n",
                      path, cfg.holfuy_pass, cfg.holfuy_id, host, connection);
             holfuy.write(request);
