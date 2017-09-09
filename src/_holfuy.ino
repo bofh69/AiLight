@@ -47,11 +47,10 @@ public:
     };
 
     struct Sample {
-        long speed, dir;
-        float temperature;
+        float speed, dir, temperature;
     };
 
-    void add_sample(long speed, long dir, float temperature) {
+    void add_sample(float speed, float dir, float temperature) {
         samples[sample_idx].speed = speed;
         samples[sample_idx].dir = dir;
         samples[sample_idx].temperature = temperature;
@@ -128,10 +127,17 @@ static void update_light_colour()
     }
 }
 
+float get_number() {
+    float ret = tmp_nr;
+    while(n_decimals-- > 0) {
+       ret /= 10.0;
+    }
+    return ret;
+}
+
 static void onData(void*, AsyncClient*, void *indata, size_t len)
 {
-    static int speed, dir;
-    static float temperature;
+    static float speed, dir, temperature;
 
     const char *data = static_cast<const char*>(indata);
     while(len-- > 0) {
@@ -170,21 +176,18 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
         case HS_RECV_BODY:
             if(*data == ',') {
                 switch(nr_commas++) {
-                case 4: // Windspeed #1
-                    speed = tmp_nr;
+                case 4: // Windspeed
+                    speed = get_number();
                     break;
-                case 5: // Windspeed #2
+                case 5: // Windspeed gust
                     break;
                 case 7: // Direction
-                    dir = tmp_nr;
+                    dir = get_number();
                     break;
                 case 8: // Temp
-                    temperature = tmp_nr;
-                    while(n_decimals-- > 0) {
-                        temperature /= 10.0;
-                    }
+                    temperature = get_number();
                     break;
-                case 9: { // ???
+                case 9: { // Humidity
                     samples.add_sample(speed, dir, temperature);
                     update_light_colour();
                 } break;
