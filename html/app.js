@@ -179,8 +179,8 @@ function Slider(id) {
 }).call(Slider.prototype);
 
 let colour_lamp = document.getElementById("colour_lamp");
-colour_lamp.addEventListener("change", sendRGB2.bind(this), { passive: true});
-colour_lamp.addEventListener("input", sendRGB2.bind(this), { passive: true});
+colour_lamp.addEventListener("change", sendRGB.bind(this), { passive: true});
+colour_lamp.addEventListener("input", sendRGB.bind(this), { passive: true});
 
 // Globals
 let websock;
@@ -200,20 +200,6 @@ let hS = false;
  * @return void
  */
 function sendRGB(e) {
-  let msg = {
-    'state': S_ON,
-    'type': e.type
-  };
-
-  msg[K_C] = {};
-  msg[K_C][rSlider.id] = rSlider.getValue();
-  msg[K_C][gSlider.id] = gSlider.getValue();
-  msg[K_C][bSlider.id] = bSlider.getValue();
-
-  websock.send(JSON.stringify(msg));
-}
-
-function sendRGB2(e) {
   let msg = {
     'state': S_ON,
     'type': e.type
