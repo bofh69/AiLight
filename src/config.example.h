@@ -14,7 +14,10 @@
 
 /* Override settings from config-default.h */
 
+#undef HOSTNAME
 #define HOSTNAME "WindLight"
+
+#undef ADMIN_PASSWORD
 #define ADMIN_PASSWORD "hinotori"
 
 /**
@@ -24,6 +27,11 @@
  * RGBW Light. These will be used as the factory defaults of your device. If no
  * SSID/PSK are provided, your Ai-Thinker RGBW light will start in AP mode.
  */
+#undef WIFI_SSID
 #define WIFI_SSID ""
+
+#undef WIFI_PSK
 #define WIFI_PSK ""
+
+#undef WIFI_OUTPUT_POWER
 #define WIFI_OUTPUT_POWER 20.5 // 20.5 is the maximum output power
