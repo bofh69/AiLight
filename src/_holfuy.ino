@@ -341,5 +341,6 @@ void loopHolfuy()
  */
 void setupHolfuy()
 {
-    update_light_colour();
+    if(cfg.holfuy_enabled)
+        update_light_colour();
 }
