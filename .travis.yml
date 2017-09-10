@@ -32,10 +32,13 @@ sudo: false
 cache:
     directories:
         - "~/.platformio"
+addons:
+  apt:
+    packages:
+    - npm
 
 install:
     - pip install -U platformio
-    - apt-get install npm
     - npm install gulp
 
 script:
