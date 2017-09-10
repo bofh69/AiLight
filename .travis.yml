@@ -1,76 +1,28 @@
-# Continuous Integration (CI) is the practice, in software
-# engineering, of merging all developer working copies with a shared mainline
-# several times a day < http://docs.platformio.org/page/ci/index.html >
-#
-# Documentation:
-#
-# * Travis CI Embedded Builds with PlatformIO
-#   < https://docs.travis-ci.com/user/integration/platformio/ >
-#
-# * PlatformIO integration with Travis CI
-#   < http://docs.platformio.org/page/ci/travis.html >
-#
-# * User Guide for `platformio ci` command
-#   < http://docs.platformio.org/page/userguide/cmd_ci.html >
-#
-#
-# Please choice one of the following templates (proposed below) and uncomment
-# it (remove "# " before each line) or use own configuration according to the
-# Travis CI documentation (see above).
-#
-
-
-#
-# Template #1: General project. Test it using existing `platformio.ini`.
-#
-
 language: python
 python:
-    - "2.7"
-
+  - '2.7'
 sudo: false
 cache:
-    directories:
-        - "~/.platformio"
-        - "node_modules"
+  directories:
+  - "~/.platformio"
+  - node_modules
 addons:
   apt:
     packages:
     - npm
-
 install:
-    - pip install -U platformio
-    - npm update
-    - npm install -g gulp-cli
-    - npm install del gulp-plumber gulp-htmlmin gulp-clean-css gulp-gzip gulp-inline gulp-sass gulp-base64-favicon gulp-css-base64 gulp-uglify
-
+  - pip install -U platformio
+  - npm update
+  - npm install -g gulp-cli
+  - npm install del gulp-plumber gulp-htmlmin gulp-clean-css gulp-gzip gulp-inline gulp-sass gulp-base64-favicon gulp-css-base64 gulp-uglify
 script:
-    - cp platformio.example.ini platformio.ini
-    - cp src/config.example.h src/config.h
-    # - echo "#define html_gz_len 0" > src/html.gz.h
-    # - echo "const uint8_t html_gz[] PROGMEM = {};" >> src/html.gz.h
-    - platformio run
-
-#
-# Template #2: The project is intended to by used as a library with examples
-#
-
-# language: python
-# python:
-#     - "2.7"
-#
-# sudo: false
-# cache:
-#     directories:
-#         - "~/.platformio"
-#
-# env:
-#     - PLATFORMIO_CI_SRC=path/to/test/file.c
-#     - PLATFORMIO_CI_SRC=examples/file.ino
-#     - PLATFORMIO_CI_SRC=path/to/test/directory
-#
-# install:
-#     - pip install -U platformio
-#
-# script:
-#     - platformio ci --lib="." --board=ID_1 --board=ID_2 --board=ID_N
+  - cp platformio.example.ini platformio.ini
+  - cp src/config.example.h src/config.h
+  - platformio run
+deploy:
+  provider: releases
+  api_key:
+    secure: t/nBxxRbrZ1lur102Gz7sIUIOMjDNnSVrGd1P14NrA05jtl1tWJbVC7M2gQs1O6Sz15yRoVEZ9tRYYO0iHxk2by1diVMkpWVBW1DT/Zk53fgC35LXC0tzpBi/1lTYXKp7uDZK+jQnYm6Hh7J0OsHEe2L0wYq+7ulYmuYEZSIAvgjxtXa6d9rQilVSohDRhTk47n6vesSDaxo2S8fAZEl0PD8twztwz6yK3vDkjlKtpS/UFeNEAK9dOiDd9sFlQ5VBWItz7M+5Q4qMaVt1DF7boiI9a8tBpS3pyqA8QNXQ0LSB8P92Fu3w4DCxFWfxlPjjIFjooYic/fERWlHvN9TMp1Q34ZRKPsb/DvxXwUgXVvyX4GjzGe5O4XAJlt+C/y7nwdOKI3Rokkwvqgw+s8Rbi9zalgA9vhbDVi2cJ53ROH3GXaz4lNUAAPmJq8Au8uGRWudUbwZ4fs/NHV8lH5UzI29ySOE0PGMfvPiXZ2mIvqmvM2TssGMwR+WgNVpZx0CwvUXUyLBQnRWeYSsiVVWuxajylwufg7GxkpOzlIJE7Gjwb5z5h9FNZyX9crY4AvzxElekN14Kuu9DmD0cdFk6Ok6zlApQmqJGyHBVeRZKSoP+Or8AV3o4JTIefsRr8TQt6m6NO7Doh8ATqMTm4Fxd8RQg/9vE3anyFe5ga1F9Lw=
+  file: ".pioenvs/dev/firmware.bin"
+  on:
+    repo: bofh69/AiLight
