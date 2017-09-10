@@ -39,7 +39,7 @@ addons:
 
 install:
     - pip install -U platformio
-    - npm install gulp del
+    - npm install gulp del gulp-plumbing gulp-htmlmin gulp-clean-css gulp-gzip gulp-inline gulp-sass gulp-base64-favicon gulp-css-base64 uglify-es gulp-uglify/composer 
 
 script:
     - cp platformio.example.ini platformio.ini
