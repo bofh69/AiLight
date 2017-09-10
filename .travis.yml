@@ -32,6 +32,7 @@ sudo: false
 cache:
     directories:
         - "~/.platformio"
+        - "node_modules"
 addons:
   apt:
     packages:
