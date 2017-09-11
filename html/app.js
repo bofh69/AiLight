@@ -45,6 +45,30 @@ function Switch(id, du = true) {
   this.init();
 }
 
+let lastMessage = null;
+/**
+ * Sends messages to the websocket.
+ * Buffers one message and reconnects as needed.
+ */
+function sendMsg(msg) {
+  if(!websock || websock.readyState == WebSocket.CLOSED) {
+    lastMessage = msg;
+  } else if (websock.readyState == WebSocket.OPEN) {
+    if(this.lastMessage) {
+      websock.send(JSON.stringify(lastMessage));
+      lastMessage = null;
+      return sendMsg(msg);
+    }
+    websock.send(JSON.stringify(msg));
+  } else if(websock.connecting) {
+      lastMessage = msg;
+      return;
+  } else {
+    lastMessage = msg;
+    wsConnect();
+  }
+}
+
 (function() {
   this.getState = function() {
     return this.state;
@@ -96,7 +120,7 @@ function Switch(id, du = true) {
     state[this.id] = value;
 
     if (this.du) {
-      websock.send(JSON.stringify(state));
+      sendMsg(state);
     }
   };
 
@@ -148,7 +172,7 @@ function Slider(id) {
     };
     msg[this.id] = this.el.value;
 
-    websock.send(JSON.stringify(msg));
+    sendMsg(msg);
   };
 
   this._init = function() {
@@ -211,7 +235,7 @@ function sendRGB(e) {
   msg[K_C][K_G] = parseInt(colour_lamp.value.substring(3,5), 16);
   msg[K_C][K_B] = parseInt(colour_lamp.value.substring(5,7), 16);
 
-  websock.send(JSON.stringify(msg));
+  sendMsg(msg);
 }
 
 /**
@@ -453,9 +477,9 @@ function restart() {
     return false;
   }
 
-  websock.send(JSON.stringify({
+  sendMsg({
     'command': 'restart'
-  }));
+  });
 
   // Wait for the device to have restarted before reloading the page
   reload(true);
@@ -472,9 +496,9 @@ function reset() {
     return false;
   }
 
-  websock.send(JSON.stringify({
+  sendMsg({
     'command': 'reset'
-  }));
+  });
 
   // Wait for the device to have restarted before reloading the page
   reload(true);
@@ -571,7 +595,7 @@ function save() {
 
   if (isValid) {
     msg.s = s;
-    websock.send(JSON.stringify(msg));
+    sendMsg(msg);
   }
 }
 
