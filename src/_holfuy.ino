@@ -16,26 +16,77 @@
 
 /* TODO:
  * Put the http-client in its own class.
- * Put the body-parser in its own class.
  * Add support for temperature reporting.
  * Unit tests requires subscription to PlatformIO. :-(
  */
 
-typedef enum {
-    HS_IDLE,
-    HS_CONNECTING,
-    HS_SEND_HEADER,
-    HS_RECV_HEADER,
-    HS_RECV_HEADER_CR1,
-    HS_RECV_HEADER_LF1,
-    HS_RECV_HEADER_CR2,
-    HS_RECV_BODY,
-} holfuy_state_t;
-static holfuy_state_t hs_state;
 
-static int nr_commas;
-static long tmp_nr;
-static int n_decimals;
+class Parser {
+public:
+    virtual bool parse(const char c);
+    virtual void done();
+};
+
+template <typename B>
+class HttpResponseParser : Parser {
+    enum parse_state {
+	RECV_HEADER,
+	RECV_HEADER_CR1,
+	RECV_HEADER_LF1,
+	RECV_HEADER_CR2,
+	RECV_BODY,
+    };
+
+    B bodyParser;
+    enum parse_state state;
+public:
+    HttpResponseParser() : state(RECV_HEADER) {}
+
+    bool parse(const char c) {
+        switch(state) {
+	    case RECV_HEADER:
+	        /* Ignore the headers, search for its end */
+		if(c == '\r')
+		  state = RECV_HEADER_CR1;
+		break;
+	    case RECV_HEADER_CR1:
+		if(c == '\n')
+		    state = RECV_HEADER_LF1;
+		else if(c != '\r') {
+		    state = RECV_HEADER;
+		    return parse(c);
+		}
+		break;
+	    case RECV_HEADER_LF1:
+		if(c == '\r')
+		    state = RECV_HEADER_CR2;
+		else {
+		    state = RECV_HEADER;
+		    return parse(c);
+		}
+		break;
+	    case RECV_HEADER_CR2:
+		if(c == '\n') {
+		    state = RECV_BODY;
+		} else if(c == '\r')
+		    state = RECV_HEADER_CR1;
+		else {
+		    state = RECV_HEADER;
+		    return parse(c);
+		}
+		break;
+	    case RECV_BODY:
+	      return bodyParser.parse(c);
+	    break;
+	}
+	return true;
+    }
+
+    void done() {
+        if(state == RECV_BODY)
+	    bodyParser.done();
+    }
+};
 
 template <typename Sample_t>
 class EvaluateSamples {
@@ -137,8 +188,6 @@ private:
     }
 };
 
-static AsyncClient holfuy;
-
 static void update_light_colour()
 {
     SamplesToColour stc;
@@ -152,18 +201,77 @@ static void update_light_colour()
     }
 }
 
-float get_number() {
-    float ret = tmp_nr;
-    while(n_decimals-- > 0) {
-       ret /= 10.0;
+class HolfuyCsvResponseParser : Parser {
+    int nr_commas;
+    long tmp_nr;
+    int n_decimals;
+    float speed, dir, temperature;
+
+    float get_number() {
+	float ret = tmp_nr;
+	while(n_decimals-- > 0) {
+	   ret /= 10.0;
+	}
+	return ret;
     }
-    return ret;
-}
+
+public:
+    HolfuyCsvResponseParser() : nr_commas(0), tmp_nr(0), n_decimals(-100) {} 
+
+    bool parse(const char c) {
+	if(c == ',') {
+	    switch(nr_commas++) {
+		case 4: // Windspeed
+		    speed = get_number();
+		    break;
+		case 5: // Windspeed gust
+		    break;
+		case 7: // Direction
+		    dir = get_number();
+		    break;
+		case 8: // Temp
+		    temperature = get_number();
+		    break;
+		case 9: // Humidity
+		    break;
+		case 10: // preassure
+		    return false;
+	    }
+	    tmp_nr = 0;
+	    n_decimals = -100;
+	} else if(c == '.') {
+	    n_decimals = 0;
+	} else if((c >= '0') &&
+		(c <= '9')) {
+	    // This does count leading zeros as well, but since we
+	    // only care about decimals after the dot, it does not matter.
+	    n_decimals++;
+	    tmp_nr = tmp_nr * 10 + (c - '0');
+	}
+	return true;
+    }
+
+    void done() {
+        // Add sample.
+	samples.add_sample(speed, dir, temperature);
+	update_light_colour();
+    }
+};
+
+typedef enum {
+    HS_IDLE,
+    HS_CONNECTING,
+    HS_SEND_HEADER,
+    HS_RECV_RESPONSE,
+} holfuy_state_t;
+
+static AsyncClient holfuy;
+static holfuy_state_t hs_state;
+
+static HttpResponseParser<HolfuyCsvResponseParser> *recvParser;
 
 static void onData(void*, AsyncClient*, void *indata, size_t len)
 {
-    static float speed, dir, temperature;
-
     const char *data = static_cast<const char*>(indata);
     while(len-- > 0) {
         switch(hs_state) {
@@ -173,64 +281,11 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
             /* Should not be able to happen. */
             holfuy.close();
             break;
-        case HS_RECV_HEADER:
-            if(*data == '\r')
-              hs_state = HS_RECV_HEADER_CR1;
-            break;
-        case HS_RECV_HEADER_CR1:
-            if(*data == '\n')
-              hs_state = HS_RECV_HEADER_LF1;
-            else if(*data != '\r')
-              hs_state = HS_RECV_HEADER;
-            break;
-        case HS_RECV_HEADER_LF1:
-            if(*data == '\r')
-              hs_state = HS_RECV_HEADER_CR2;
-            else hs_state = HS_RECV_HEADER;
-            break;
-        case HS_RECV_HEADER_CR2:
-            if(*data == '\n') {
-              hs_state = HS_RECV_BODY;
-              nr_commas = 0;
-              tmp_nr = 0;
-              n_decimals = -100;
-            } else if(*data == '\r')
-              hs_state = HS_RECV_HEADER_CR1;
-            else hs_state = HS_RECV_HEADER;
-            break;
-        case HS_RECV_BODY:
-            if(*data == ',') {
-                switch(nr_commas++) {
-                case 4: // Windspeed
-                    speed = get_number();
-                    break;
-                case 5: // Windspeed gust
-                    break;
-                case 7: // Direction
-                    dir = get_number();
-                    break;
-                case 8: // Temp
-                    temperature = get_number();
-                    break;
-                case 9: { // Humidity
-                    samples.add_sample(speed, dir, temperature);
-                    update_light_colour();
-                } break;
-                case 10: // preassure
-                    holfuy.close();
-                    return;
-                }
-                tmp_nr = 0;
-                n_decimals = -100;
-            } else if(*data == '.') {
-                n_decimals = 0;
-            } else if((*data >= '0') &&
-                      (*data <= '9')) {
-                // This does count leading zeros as well, but since we
-                // only care about decimals after the dot, it does not matter.
-                n_decimals++;
-                tmp_nr = tmp_nr * 10 + (*data - '0');
-            }
+        case HS_RECV_RESPONSE:
+	    if(!recvParser->parse(*data)) {
+		holfuy.close();
+		recvParser->done();
+	    }
             break;
         }
         data++;
@@ -292,6 +347,8 @@ void loopHolfuy()
         if(holfuy.connected()) {
             holfuy.close(true);
         }
+	if(recvParser) delete recvParser;
+        recvParser = new HttpResponseParser<HolfuyCsvResponseParser>();
         holfuy.onData(onData);
         connection++;
         char host[128];
@@ -303,11 +360,6 @@ void loopHolfuy()
 
     switch(hs_state) {
     case HS_IDLE:
-    case HS_RECV_HEADER:
-    case HS_RECV_HEADER_CR1:
-    case HS_RECV_HEADER_LF1:
-    case HS_RECV_HEADER_CR2:
-    case HS_RECV_BODY:
         /* Nothing to do here */
         break;
     case HS_CONNECTING:
@@ -330,7 +382,7 @@ void loopHolfuy()
                      "Connection: Disconnect\r\n\r\n",
                      path, cfg.holfuy_pass, cfg.holfuy_id, host, connection);
             holfuy.write(request);
-            hs_state = HS_RECV_HEADER;
+            hs_state = HS_RECV_RESPONSE;
         }
         break;
     }
