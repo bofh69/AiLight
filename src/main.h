@@ -11,7 +11,7 @@
  */
 
 #define APP_NAME "WindLight"
-#define APP_VERSION "0.0.1-dev"
+#define APP_VERSION "0.0.2-dev"
 #define APP_AUTHOR "sebastian@bittr.nu"
 
 #define DEVICE_MANUFACTURER "Ai-Thinker"
