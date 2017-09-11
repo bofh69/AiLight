@@ -23,8 +23,9 @@
 
 class Parser {
 public:
-    virtual bool parse(const char c);
-    virtual void done();
+    virtual bool parse(const char c) = 0;
+    virtual void done() = 0;
+    virtual ~Parser() {};
 };
 
 template <typename B>
@@ -41,6 +42,7 @@ class HttpResponseParser : Parser {
     enum parse_state state;
 public:
     HttpResponseParser() : state(RECV_HEADER) {}
+    virtual ~HttpResponseParser() {};
 
     bool parse(const char c) {
         switch(state) {
@@ -360,6 +362,7 @@ void loopHolfuy()
 
     switch(hs_state) {
     case HS_IDLE:
+    case HS_RECV_RESPONSE:
         /* Nothing to do here */
         break;
     case HS_CONNECTING:
