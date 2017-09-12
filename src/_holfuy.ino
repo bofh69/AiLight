@@ -31,11 +31,11 @@ public:
 template <typename B>
 class HttpResponseParser : Parser {
     enum parse_state {
-	RECV_HEADER,
-	RECV_HEADER_CR1,
-	RECV_HEADER_LF1,
-	RECV_HEADER_CR2,
-	RECV_BODY,
+        RECV_HEADER,
+        RECV_HEADER_CR1,
+        RECV_HEADER_LF1,
+        RECV_HEADER_CR2,
+        RECV_BODY,
     };
 
     B bodyParser;
@@ -46,47 +46,47 @@ public:
 
     bool parse(const char c) {
         switch(state) {
-	    case RECV_HEADER:
-	        /* Ignore the headers, search for its end */
-		if(c == '\r')
-		  state = RECV_HEADER_CR1;
-		break;
-	    case RECV_HEADER_CR1:
-		if(c == '\n')
-		    state = RECV_HEADER_LF1;
-		else if(c != '\r') {
-		    state = RECV_HEADER;
-		    return parse(c);
-		}
-		break;
-	    case RECV_HEADER_LF1:
-		if(c == '\r')
-		    state = RECV_HEADER_CR2;
-		else {
-		    state = RECV_HEADER;
-		    return parse(c);
-		}
-		break;
-	    case RECV_HEADER_CR2:
-		if(c == '\n') {
-		    state = RECV_BODY;
-		} else if(c == '\r')
-		    state = RECV_HEADER_CR1;
-		else {
-		    state = RECV_HEADER;
-		    return parse(c);
-		}
-		break;
-	    case RECV_BODY:
-	      return bodyParser.parse(c);
-	    break;
-	}
-	return true;
+            case RECV_HEADER:
+                /* Ignore the headers, search for its end */
+                if(c == '\r')
+                  state = RECV_HEADER_CR1;
+                break;
+            case RECV_HEADER_CR1:
+                if(c == '\n')
+                    state = RECV_HEADER_LF1;
+                else if(c != '\r') {
+                    state = RECV_HEADER;
+                    return parse(c);
+                }
+                break;
+            case RECV_HEADER_LF1:
+                if(c == '\r')
+                    state = RECV_HEADER_CR2;
+                else {
+                    state = RECV_HEADER;
+                    return parse(c);
+                }
+                break;
+            case RECV_HEADER_CR2:
+                if(c == '\n') {
+                    state = RECV_BODY;
+                } else if(c == '\r')
+                    state = RECV_HEADER_CR1;
+                else {
+                    state = RECV_HEADER;
+                    return parse(c);
+                }
+                break;
+            case RECV_BODY:
+              return bodyParser.parse(c);
+            break;
+        }
+        return true;
     }
 
     void done() {
         if(state == RECV_BODY)
-	    bodyParser.done();
+            bodyParser.done();
     }
 };
 
@@ -210,53 +210,53 @@ class HolfuyCsvResponseParser : Parser {
     float speed, dir, temperature;
 
     float get_number() {
-	float ret = tmp_nr;
-	while(n_decimals-- > 0) {
-	   ret /= 10.0;
-	}
-	return ret;
+        float ret = tmp_nr;
+        while(n_decimals-- > 0) {
+           ret /= 10.0;
+        }
+        return ret;
     }
 
 public:
-    HolfuyCsvResponseParser() : nr_commas(0), tmp_nr(0), n_decimals(-100) {} 
+    HolfuyCsvResponseParser() : nr_commas(0), tmp_nr(0), n_decimals(-100) {}
 
     bool parse(const char c) {
-	if(c == ',') {
-	    switch(nr_commas++) {
-		case 4: // Windspeed
-		    speed = get_number();
-		    break;
-		case 5: // Windspeed gust
-		    break;
-		case 7: // Direction
-		    dir = get_number();
-		    break;
-		case 8: // Temp
-		    temperature = get_number();
-		    break;
-		case 9: // Humidity
-		    break;
-		case 10: // preassure
-		    return false;
-	    }
-	    tmp_nr = 0;
-	    n_decimals = -100;
-	} else if(c == '.') {
-	    n_decimals = 0;
-	} else if((c >= '0') &&
-		(c <= '9')) {
-	    // This does count leading zeros as well, but since we
-	    // only care about decimals after the dot, it does not matter.
-	    n_decimals++;
-	    tmp_nr = tmp_nr * 10 + (c - '0');
-	}
-	return true;
+        if(c == ',') {
+            switch(nr_commas++) {
+                case 4: // Windspeed
+                    speed = get_number();
+                    break;
+                case 5: // Windspeed gust
+                    break;
+                case 7: // Direction
+                    dir = get_number();
+                    break;
+                case 8: // Temp
+                    temperature = get_number();
+                    break;
+                case 9: // Humidity
+                    break;
+                case 10: // preassure
+                    return false;
+            }
+            tmp_nr = 0;
+            n_decimals = -100;
+        } else if(c == '.') {
+            n_decimals = 0;
+        } else if((c >= '0') &&
+                (c <= '9')) {
+            // This does count leading zeros as well, but since we
+            // only care about decimals after the dot, it does not matter.
+            n_decimals++;
+            tmp_nr = tmp_nr * 10 + (c - '0');
+        }
+        return true;
     }
 
     void done() {
         // Add sample.
-	samples.add_sample(speed, dir, temperature);
-	update_light_colour();
+        samples.add_sample(speed, dir, temperature);
+        update_light_colour();
     }
 };
 
@@ -272,6 +272,12 @@ static holfuy_state_t hs_state;
 
 static HttpResponseParser<HolfuyCsvResponseParser> *recvParser;
 
+static void onDisconnect(void*, AsyncClient*)
+{
+    if(hs_state == HS_RECV_RESPONSE)
+        recvParser->done();
+}
+
 static void onData(void*, AsyncClient*, void *indata, size_t len)
 {
     const char *data = static_cast<const char*>(indata);
@@ -284,10 +290,9 @@ static void onData(void*, AsyncClient*, void *indata, size_t len)
             holfuy.close();
             break;
         case HS_RECV_RESPONSE:
-	    if(!recvParser->parse(*data)) {
-		holfuy.close();
-		recvParser->done();
-	    }
+            if(!recvParser->parse(*data)) {
+                holfuy.close();
+            }
             break;
         }
         data++;
@@ -349,9 +354,10 @@ void loopHolfuy()
         if(holfuy.connected()) {
             holfuy.close(true);
         }
-	if(recvParser) delete recvParser;
+        if(recvParser) delete recvParser;
         recvParser = new HttpResponseParser<HolfuyCsvResponseParser>();
         holfuy.onData(onData);
+        holfuy.onDisconnect(onDisconnect);
         connection++;
         char host[128];
         int port;
