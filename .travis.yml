@@ -14,7 +14,7 @@ install:
   - pip install -U platformio
   - npm update
   - npm install -g gulp-cli
-  - npm install del gulp-plumber gulp-htmlmin gulp-clean-css gulp-gzip gulp-inline gulp-sass gulp-base64-favicon gulp-css-base64 gulp-uglify
+  - npm install
 script:
   - cp platformio.example.ini platformio.ini
   - cp src/config.example.h src/config.h
