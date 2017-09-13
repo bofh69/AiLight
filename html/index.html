@@ -9,6 +9,10 @@
   <title>WindLight, 0.1</title>
   <!-- shortcut::html/favicon.png -->
   <link rel="stylesheet" href="style.css">
+<!-- Polyfill for input[type=color]: -->
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.css">
 </head>
 
 <body style="zoom: 1;">
@@ -103,7 +107,7 @@
             <td></td>
           </tr>
             <th>Colour</th>
-            <td><input class="" type="color" id="colour_lamp"></td>
+            <td><input type="color" id="colour_lamp"></td>
           </tr>
           <tr>
             <th>White</th>
