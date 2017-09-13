@@ -202,9 +202,11 @@ function Slider(id) {
   };
 }).call(Slider.prototype);
 
-let colour_lamp = document.getElementById("colour_lamp");
-colour_lamp.addEventListener("change", sendRGB.bind(this), { passive: true});
-colour_lamp.addEventListener("input", sendRGB.bind(this), { passive: true});
+let colour_lamp_el = document.getElementById("colour_lamp");
+colour_lamp_el.onchange = function(e) { sendRGB(e) };
+colour_lamp_el.oninput = function(e) { sendRGB(e) };
+// colour_lamp_el.addEventListener("change", sendRGB.bind(this), { passive: true});
+// colour_lamp_el.addEventListener("input", sendRGB.bind(this), { passive: true});
 
 // Globals
 let websock;
@@ -229,11 +231,10 @@ function sendRGB(e) {
     'type': e.type
   };
 
-
   msg[K_C] = {};
-  msg[K_C][K_R] = parseInt(colour_lamp.value.substring(1,3), 16);
-  msg[K_C][K_G] = parseInt(colour_lamp.value.substring(3,5), 16);
-  msg[K_C][K_B] = parseInt(colour_lamp.value.substring(5,7), 16);
+  msg[K_C][K_R] = parseInt(colour_lamp_el.value.substring(1,3), 16);
+  msg[K_C][K_G] = parseInt(colour_lamp_el.value.substring(3,5), 16);
+  msg[K_C][K_B] = parseInt(colour_lamp_el.value.substring(5,7), 16);
 
   sendMsg(msg);
 }
@@ -346,7 +347,7 @@ function processData(data) {
         return ("0" + (v.toString(16))).substr(-2);
       }
 
-      colour_lamp.value = "#" +
+      colour_lamp_el.value = "#" +
           toHex2(data[key][K_R]) +
           toHex2(data[key][K_G]) +
           toHex2(data[key][K_B]);
