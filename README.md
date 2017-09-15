@@ -64,6 +64,16 @@ while true; do
 done
 ```
 
+### Web development
+If you want to serve the web pages localy, you have to build a css file:
+```sh
+gulp css
+```
+
+If you want to add more icons to the page, build a new font with
+[Icomoon](https://icomoon.io/app/#/)
+The current icons are from the Typicons set.
+
 ## Credits and License
 
 The **AiLight** Firmware is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT). For the full copyright and license information, please see the <license> file that was distributed with this source code.</license>
