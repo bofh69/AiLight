@@ -64,17 +64,21 @@ i {
   vertical-align: -webkit-baseline-middle;
 }
 
-.icon-arrow-loop:before {
+.icon-arrow-sync:before {
   content: "\e901";
+  color: $grey;
 }
 
-.icon-power:before {
+.icon-arrow-loop:before {
   content: "\e902";
 }
 
-.icon-arrow-sync:before {
+.icon-power:before {
   content: "\e903";
-  color: $grey;
+}
+
+.icon-download-outline:before {
+  content: "\e904";
 }
 
 .footer {

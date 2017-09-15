@@ -97,12 +97,10 @@ function sendMsg(msg) {
       value = (this.state) ? S_ON : S_OFF;
     }
 
-    // Handle visibility of HA Discovery settings
+    // Handle visibility of Holfuy Discovery settings
     if (this.id === K_H) {
-      /*
-      let ad = document.getElementById('holfuy_');
-      ad.style.display = (this.state) ? 'flex' : 'none';
-      */
+      let ad = document.getElementById('holfuy_fields');
+      ad.style.display = (this.state) ? '' : 'none';
     }
 
     // Handle visibility of HA Discovery settings
@@ -113,8 +111,8 @@ function sendMsg(msg) {
 
     // Handle visibility of REST API settings
     if (this.id === K_RA) {
-      let ap = document.getElementById('rest_api_key');
-      ap.style.display = (this.state) ? 'flex' : 'none';
+      let ap = document.getElementById('developer_fields');
+      ap.style.display = (this.state) ? '' : 'none';
     }
 
     state[this.id] = value;
@@ -376,19 +374,27 @@ function wsConnect() {
     websock.close();
   }
 
+  function setWsUpState(state) {
+    document.getElementById("ws_down_msg").style.display = state?'none':'';
+  }
+
   websock = new WebSocket('ws://' + host + ':' + port + '/ws');
+  setWsUpState(false);
 
   websock.onopen = function(e) {
     console.log('[WEBSOCKET] Connected to ' + e.target.url);
+    setWsUpState(true);
   };
 
   websock.onclose = function(e) {
+    setWsUpState(false);
     console.log('[WEBSOCKET] Connection closed');
     console.log(e);
     console.log(e.reason);
   };
 
   websock.onerror = function(e) {
+    setWsUpState(false);
     console.log('[WEBSOCKET] Error: ' + e);
   };
 
@@ -499,6 +505,25 @@ function reset() {
 
   sendMsg({
     'command': 'reset'
+  });
+
+  // Wait for the device to have restarted before reloading the page
+  reload(true);
+}
+
+/**
+ * Handler for the Upgrade button
+ *
+ * @return bool true when user approves, false otherwise
+ */
+function upgrade() {
+  let response = window.confirm("You are about upgrade the firmware from the network!\n Are you sure you want to continue?");
+  if (response === false) {
+    return false;
+  }
+
+  sendMsg({
+    'command': 'upgrade'
   });
 
   // Wait for the device to have restarted before reloading the page
@@ -692,6 +717,9 @@ function generateAPIKey() {
  */
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('button-restart').addEventListener('click', restart, {
+    passive: true
+  });
+  document.getElementById('button-upgrade').addEventListener('click', upgrade, {
     passive: true
   });
   document.getElementById('reset').addEventListener('click', reset, {
