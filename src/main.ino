@@ -53,7 +53,7 @@ void loadFactoryDefaults() {
                LIGHT_COLOR_WHITE};
 
   // Configuration defaults
-  os_strcpy(cfg.hostname, getDeviceID());
+  os_strcpy(cfg.hostname, HOSTNAME);
 
   cfg.holfuy_enabled = HOLFUY_ENABLED;
   os_strcpy(cfg.holfuy_url, HOLFUY_URL);
