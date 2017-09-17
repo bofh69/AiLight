@@ -344,6 +344,9 @@ void get_host_and_port(unsigned int host_len, char *host, int *port, const char 
 
 void loopHolfuy()
 {
+    if (WiFi.getMode() != WIFI_STA) {
+        return;
+    }
     static uint32_t lastMillis = 0;
     static int connection = 0;
 
@@ -382,10 +385,11 @@ void loopHolfuy()
             const char *path;
             get_host_and_port(sizeof(host), host, NULL, &path);
             char request[256];
+            // TODO: URL-encode password & id.
             snprintf(request,
                      sizeof(request),
                      "GET %s?pw=%s&s=%d&m=CSV&su=m/s HTTP/1.1\r\n"
-                     "User-Agent: WindLight/0.0.1\r\n"
+                     "User-Agent: " APP_NAME "/" APP_VERSION "\r\n"
                      "Host: %s\r\n"
                      "X-Request-Nr: %u\r\n"
                      "Connection: Disconnect\r\n\r\n",

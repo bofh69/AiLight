@@ -112,16 +112,15 @@ void setupWiFi() {
     wifiReconnectTimer.detach(); // Ensure not to reconnect to WiFi while
                                  // changing into AP mode
 
-#if 0
     IPAddress local_IP(192,168,1,1);
     IPAddress gateway(192,168,1,1);
     IPAddress subnet(255,255,255,0);
     WiFi.softAPConfig(local_IP, gateway, subnet);
-#endif
 
     WiFi.mode(WIFI_AP);
     delay(10);
 
-    WiFi.softAP(cfg.hostname, ADMIN_PASSWORD);
+    WiFi.softAP(cfg.hostname); //, ADMIN_PASSWORD);
+    LLMNR.notify_ap_change();
   }
 }
