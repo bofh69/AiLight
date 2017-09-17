@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 It is possible to set the light's colour from the wind data from a Holfuy weather station.
 
+Upgrade button to download & upgrade the firmware.
+
+Changed the default hostname to be "WindLight"
+
+Added support for LLMNR - "http://windlight/" should now work on windows.
+
 More configuration.
 
 ### Changed

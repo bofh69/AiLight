@@ -12,6 +12,8 @@
  * Copyright (c) 2016 - 2017 Sacha Telgenhof
  */
 
+#include <ESP8266LLMNR.h>
+
 /**
  * @brief Event Handler when an IP address has been assigned
  *
@@ -36,6 +38,7 @@ void onSTAGotIP(WiFiEventStationModeGotIP event) {
 #endif
 
   mqttConnect();
+  LLMNR.notify_ap_change();
 }
 
 /**
@@ -50,6 +53,7 @@ void onAPConnected(WiFiEventSoftAPModeStationConnected event) {
   DEBUGLOG("[WIFI] MAC Address : %s\n", WiFi.softAPmacAddress().c_str());
   DEBUGLOG("[WIFI] Oper. Mode  : AP\n");
   DEBUGLOG("\n");
+  LLMNR.notify_ap_change();
 }
 
 /**
@@ -83,12 +87,14 @@ void setupWiFi() {
     EEPROM_write(cfg);
   }
   WiFi.hostname(cfg.hostname);
+  LLMNR.begin(cfg.hostname);
 
   // Set WiFi module to STA mode and set Power Output
   if (WiFi.getMode() != WIFI_STA) {
     WiFi.mode(WIFI_STA);
     WiFi.setOutputPower(WIFI_OUTPUT_POWER);
     delay(10);
+    LLMNR.notify_ap_change();
   }
 
   // (Re)connect
@@ -97,6 +103,7 @@ void setupWiFi() {
   WiFi.begin(cfg.wifi_ssid, cfg.wifi_psk);
 
   MDNS.addService("http", "tcp", 80);
+  LLMNR.notify_ap_change();
 
   // Check connection and switch to AP mode if no connection
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -104,6 +111,13 @@ void setupWiFi() {
 
     wifiReconnectTimer.detach(); // Ensure not to reconnect to WiFi while
                                  // changing into AP mode
+
+#if 0
+    IPAddress local_IP(192,168,1,1);
+    IPAddress gateway(192,168,1,1);
+    IPAddress subnet(255,255,255,0);
+    WiFi.softAPConfig(local_IP, gateway, subnet);
+#endif
 
     WiFi.mode(WIFI_AP);
     delay(10);
