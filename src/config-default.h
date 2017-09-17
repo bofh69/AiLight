@@ -32,6 +32,7 @@
  * ---------------------------
  */
 #define OTA_PORT 8266
+#define UPDATE_URL "http://windlight.se/firmware/from-" APP_VERSION "/firmware.bin"
 
 /**
  * WiFi

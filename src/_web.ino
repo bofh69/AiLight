@@ -9,7 +9,7 @@
 
  * Created by Sacha Telgenhof <stelgenhof at gmail dot com>
  * (https://www.sachatelgenhof.nl)
- * Copyright (c) 2016 - 2017 Sacha Telgenhof
+ * Copyright (c) 2016 - 2017 Sacha Telgenhof, 2017 Sebastian Andersson
  */
 
 #define HTTP_PREFIX "http://"
@@ -165,6 +165,10 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
     if (os_strcmp(command, "reset") == 0) {
       loadFactoryDefaults();
       ESP.restart();
+    }
+
+    if (os_strcmp(command, "upgrade") == 0) {
+      try_upgrade = true;
     }
   }
 

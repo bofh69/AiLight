@@ -66,21 +66,25 @@ void setupOTA() {
   ArduinoOTA.begin();
 }
 
+bool try_upgrade = false;
+
+static void upgrade_triggered()
+{
+    try_upgrade = false;
+    ESPhttpUpdate.rebootOnUpdate(true);
+    auto ret = ESPhttpUpdate.update(UPDATE_URL);
+    if(ret == HTTP_UPDATE_NO_UPDATES) {
+        ws.textAll("{\"upgrade_error\":\"No new firmware was found.\"}");
+        return;
+    }
+    auto errMsg = "{\"upgrade_error\":\"Upgrade failed: " + ESPhttpUpdate.getLastErrorString() + "\"}";
+    ws.textAll(errMsg);
+}
+
 /**
  * @brief Listen to OTA requests
  */
 void loopOTA() {
   ArduinoOTA.handle();
-
-/*
-  // After 20 seconds, check once for a new firmware.
-  static t_httpUpdate_return ret = (t_httpUpdate_return)-1;
-  if((ret != HTTP_UPDATE_NO_UPDATES) &&
-     (ret != HTTP_UPDATE_FAILED) &&
-     (millis() > 20000)) {
-    ESPhttpUpdate.rebootOnUpdate(true);
-    // https://github.com/bofh69/AiLight/releases/download/0.0.2/firmware.bin
-    ret = ESPhttpUpdate.update("http://192.168.0.16:8080/from-" APP_VERSION "/firmware.bin");
-  }
-*/
+  if(try_upgrade) upgrade_triggered();
 }
