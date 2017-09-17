@@ -276,6 +276,11 @@ function processData(data) {
       }
     }
 
+    if (key === 'upgrade_error') {
+      stopUpgrade();
+      window.alert(data[key]);
+    }
+
     // Process settings
     if (key === 's') {
       document.title += ' - ' + data[key].hostname;
@@ -297,12 +302,10 @@ function processData(data) {
         if (s === "switch_holfuy") {
           hSwitch.setState(data[key][s]);
 
-/* TODO:
-          let ap = document.getElementById('holfuy_');
+          let ap = document.getElementById('holfuy_fields');
           if (!data[key][s]) {
             ap.style.display = "none";
           }
-*/
         }
 
         // Set HA Discovery switch and prefix field
@@ -319,7 +322,7 @@ function processData(data) {
         if (s === "switch_rest_api") {
           raSwitch.setState(data[key][s]);
 
-          let ap = document.getElementById('rest_api_key');
+          let ap = document.getElementById('developer_fields');
           if (!data[key][s]) {
             ap.style.display = "none";
           }
@@ -406,6 +409,28 @@ function wsConnect() {
   };
 }
 
+function updateOta(data) {
+  if (data.startsWith("p-")) {
+    let pb = document.getElementById("op");
+    let p = parseInt(data.split("-")[1]);
+
+    pb.value = p;
+
+    if (p === 100 && !hS) {
+      hS = true;
+      let f = document.createElement('p');
+      f.innerHTML = "Completed successfully! Please wait for your Ai-Thinker RGBW Light to be restarted.";
+      pb.parentNode.appendChild(f);
+      reload(false);
+    }
+  }
+
+  // Show OTA Modal
+  if (data === 'start') {
+    document.getElementById("om").classList.add("is-active");
+  }
+}
+
 /**
  * EventSource client initialization and event processing
  *
@@ -431,25 +456,7 @@ function esConnect() {
 
     // Handling OTA events
     source.addEventListener('ota', function(e) {
-      if (e.data.startsWith("p-")) {
-        let pb = document.getElementById("op");
-        let p = parseInt(e.data.split("-")[1]);
-
-        pb.value = p;
-
-        if (p === 100 && !hS) {
-          hS = true;
-          let f = document.createElement('p');
-          f.innerHTML = "Completed successfully! Please wait for your Ai-Thinker RGBW Light to be restarted.";
-          pb.parentNode.appendChild(f);
-          reload(false);
-        }
-      }
-
-      // Show OTA Modal
-      if (e.data === 'start') {
-        document.getElementById("om").classList.add("is-active");
-      }
+      updateOta(e.data);
     }, false);
   }
 }
@@ -511,6 +518,8 @@ function reset() {
   reload(true);
 }
 
+let upgrade_timeout;
+
 /**
  * Handler for the Upgrade button
  *
@@ -526,8 +535,15 @@ function upgrade() {
     'command': 'upgrade'
   });
 
-  // Wait for the device to have restarted before reloading the page
-  reload(true);
+  document.getElementById("om").classList.add("is-active");
+  upgrade_timeout = setTimeout(function() {
+    location.reload(true);
+  }, 4*WAIT);
+}
+
+function stopUpgrade() {
+  document.getElementById("om").classList.remove("is-active");
+  clearTimeout(upgrade_timeout);
 }
 
 /**
