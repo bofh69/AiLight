@@ -75,11 +75,9 @@ void onSTADisconnected(WiFiEventStationModeDisconnected event) {
  * @brief Bootstrap function for the WiFi connection
  */
 void setupWiFi() {
-  static WiFiEventHandler gotIpEventHandler, apConnectedEventHandler,
-      disconnectedEventHandler;
-  gotIpEventHandler = WiFi.onStationModeGotIP(onSTAGotIP);
-  apConnectedEventHandler = WiFi.onSoftAPModeStationConnected(onAPConnected);
-  disconnectedEventHandler = WiFi.onStationModeDisconnected(onSTADisconnected);
+  static WiFiEventHandler gotIpEventHandler = WiFi.onStationModeGotIP(onSTAGotIP);
+  static WiFiEventHandler apConnectedEventHandler = WiFi.onSoftAPModeStationConnected(onAPConnected);
+  static WiFiEventHandler disconnectedEventHandler = WiFi.onStationModeDisconnected(onSTADisconnected);
 
   // Set WiFi hostname
   if (os_strlen(cfg.hostname) == 0) {
