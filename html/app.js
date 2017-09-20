@@ -25,6 +25,8 @@ const K_W = "white_value";
 const K_GM = "gamma";
 const K_HD = "ha_discovery";
 const K_RA = "rest_api";
+const HF_FIELDS = "holfuy_fields";
+const HF_TEMPL = "holfuy_template";
 
 const S_ON = 'ON';
 const S_OFF = 'OFF';
@@ -44,6 +46,16 @@ function Switch(id, du = true) {
   this.du = du;
   this.init();
 }
+
+function addPwdToggle(item) {
+  item.addEventListener('touchstart', togglePassword, {
+    passive: true
+  });
+  item.addEventListener('click', togglePassword, {
+    passive: true
+  });
+};
+
 
 let lastMessage = null;
 /**
@@ -99,7 +111,7 @@ function sendMsg(msg) {
 
     // Handle visibility of Holfuy Discovery settings
     if (this.id === K_H) {
-      let ad = document.getElementById('holfuy_fields');
+      let ad = document.getElementById(HF_FIELDS);
       ad.style.display = (this.state) ? '' : 'none';
     }
 
@@ -302,9 +314,25 @@ function processData(data) {
         if (s === "switch_holfuy") {
           hSwitch.setState(data[key][s]);
 
-          let ap = document.getElementById('holfuy_fields');
+          let hf = document.getElementById(HF_FIELDS);
           if (!data[key][s]) {
-            ap.style.display = "none";
+            hf.style.display = "none";
+          }
+        }
+        if (s === 'holfuy') {
+          let hf = document.getElementById(HF_FIELDS);
+          while(hf.children.length > 2) {
+            hf.removeChild(hf.children[1]);
+            hf = document.getElementById(HF_FIELDS);
+          }
+
+          let stations = data[key][s];
+          for(let i = 0; i < stations.length; i++) {
+            let station = addHolfuy();
+            for(let hf in stations[i]) {
+              let el = document.getElementById('' + i + '.' + hf);
+              el.value = stations[i][hf];
+            }
           }
         }
 
@@ -587,58 +615,122 @@ function save() {
 
   let inputs = document.forms[0].querySelectorAll("input");
   for (let i = 0; i < inputs.length; i++) {
-    let t = inputs[i].id.split('.');
-    let id = t.pop();
+    if(inputs[i].id !== null) {
+      let t = inputs[i].id.split('.');
+      let id = t.pop();
 
-    // Clear any validation messages
-    inputs[i].classList.remove("is-danger");
-    let p = inputs[i].parentNode;
-    let v = p.querySelectorAll("p.is-danger");
-    [].forEach.call(v, function(item) {
-      p.removeChild(item);
-    });
+      // Clear any validation messages
+      inputs[i].classList.remove("is-danger");
+      let p = inputs[i].parentNode;
+      let v = p.querySelectorAll("p.is-danger");
+      [].forEach.call(v, function(item) {
+        p.removeChild(item);
+      });
 
-    // Validate hostname input
-    if (id === 'hostname' && !Valid952HostnameRegex.test(inputs[i].value)) {
-      addValidationMessage(inputs[i], 'This hostname is invalid.');
-      isValid = false;
-      continue;
-    }
+      if(id.startsWith('holfuy')) continue;
 
-    // Validate WiFi ssid
-    if (id === 'wifi_ssid') {
-      if (!inputs[i].value || inputs[i].value.length === 0 || inputs[i].value > 31) {
-        addValidationMessage(inputs[i], 'A WiFi SSID must be present with a maximum of 31 characters.');
+      // Validate hostname input
+      if (id === 'hostname' && !Valid952HostnameRegex.test(inputs[i].value)) {
+        addValidationMessage(inputs[i], 'This hostname is invalid.');
         isValid = false;
         continue;
       }
-    }
 
-    // Validate WiFi PSK
-    if (id === 'wifi_psk') {
-      if (inputs[i].value && inputs[i].value.length > 0 && (inputs[i].value.length > 63 || inputs[i].value.length < 8)) {
-        addValidationMessage(inputs[i], 'A WiFi Passphrase Key (Password) must be between 8 and 63 characters.');
-        isValid = false;
-        continue;
+      // Validate WiFi ssid
+      if (id === 'wifi_ssid') {
+        if (!inputs[i].value || inputs[i].value.length === 0 || inputs[i].value > 31) {
+          addValidationMessage(inputs[i], 'A WiFi SSID must be present with a maximum of 31 characters.');
+          isValid = false;
+          continue;
+        }
       }
-    }
 
-    // Validate API Key
-    if (id === 'api_key') {
-      if (inputs[i].value && inputs[i].value.length > 0 && (inputs[i].value.length > 32 || inputs[i].value.length < 8)) {
-        addValidationMessage(inputs[i], 'An API Key must be between 8 and 32 characters.');
-        isValid = false;
-        continue;
+      // Validate WiFi PSK
+      if (id === 'wifi_psk') {
+        if (inputs[i].value && inputs[i].value.length > 0 && (inputs[i].value.length > 63 || inputs[i].value.length < 8)) {
+          addValidationMessage(inputs[i], 'A WiFi Passphrase Key (Password) must be between 8 and 63 characters.');
+          isValid = false;
+          continue;
+        }
       }
-    }
 
-    s[id] = (inputs[i].type === 'checkbox') ? inputs[i].checked : inputs[i].value;
+      // Validate API Key
+      if (id === 'api_key') {
+        if (inputs[i].value && inputs[i].value.length > 0 && (inputs[i].value.length > 32 || inputs[i].value.length < 8)) {
+          addValidationMessage(inputs[i], 'An API Key must be between 8 and 32 characters.');
+          isValid = false;
+          continue;
+        }
+      }
+
+      s[id] = (inputs[i].type === 'checkbox') ? inputs[i].checked : inputs[i].value;
+    }
+  }
+
+  let stations = document.getElementById(HF_FIELDS).children;
+  if(stations.length > 2) {
+    s['holfuy'] = [];
+    for(let i = 1; i < stations.length-1; i++) {
+      let station = {};
+      inputs = stations[i].getElementsByTagName('input');
+      for (let i = 0; i < inputs.length; i++) {
+        let t = inputs[i].id.split('.');
+        let id = t.pop();
+        station[id] = (inputs[i].type === 'checkbox') ? inputs[i].checked : inputs[i].value;
+        if(!station[id] || station[id].length == 0) {
+          addValidationMessage(inputs[i], 'Field can not be empty.');
+          isValid = false;
+          continue;
+        }
+      }
+      s['holfuy'].push(station);
+    }
   }
 
   if (isValid) {
     msg.s = s;
     sendMsg(msg);
   }
+}
+
+let station_nr = 0;
+
+function addHolfuy()
+{
+  let ht = document.getElementById(HF_TEMPL).cloneNode(true);
+  let hf = document.getElementById(HF_FIELDS);
+  let nr = station_nr++;
+  let inputs = ht.getElementsByTagName('input');
+  for (let i = 0; i < inputs.length; i++) {
+    inputs[i].id = '' + nr + '.' + inputs[i].id;
+  }
+  ht.id = 'holfuy_' + nr;
+
+  let di = ht.getElementsByClassName('icon-eye');
+  for (let i = 0; i < di.length; i++) {
+    let data = di[i].getAttribute('data-input');
+    if (data !== null) {
+      di[i].setAttribute('data-input', '' + nr + '.' + data);
+    }
+    addPwdToggle(di[i]);
+  }
+
+  let el = ht.getElementsByClassName('button')[0];
+  el.id = '' + nr + '.' + "holfuy_remove";
+  el.addEventListener("click", function() { ht.remove(); });
+
+  ht.style.display = '';
+  let childs = hf.children;
+  let child = childs[childs.length-1];
+  child.before(ht, child);
+
+  return ht;
+}
+
+function addHolfuyClick(e)
+{
+  let el = addHolfuy();
+  el.getElementsByTagName('input')[0].focus();
 }
 
 /**
@@ -747,17 +839,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('save').addEventListener('click', save, {
     passive: true
   });
-
-  let pw = document.getElementById("pagescontent").querySelectorAll("i.icon-eye");
-  [].forEach.call(pw, function(item) {
-    item.addEventListener('touchstart', togglePassword, {
-      passive: true
-    });
-    item.addEventListener('click', togglePassword, {
-      passive: true
-    });
+  document.getElementById('add_holfuy').addEventListener('click', addHolfuyClick, {
+    passive: true
   });
 
+  let pw = document.getElementById("pagescontent").querySelectorAll("i.icon-eye");
+  [].forEach.call(pw, addPwdToggle);
   let ak = document.getElementById("pagescontent").querySelector("i.icon-arrow-sync");
   ak.addEventListener('touchstart', generateAPIKey, {
     passive: true

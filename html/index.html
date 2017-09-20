@@ -206,84 +206,101 @@
               </div>
             </div>
 
-            <div id="holfuy_fields">
-
-              <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                  <label class="label">Station's password</label>
-                </div>
-                <div class="field-body">
-                  <div class="field">
-                    <div class="control has-icon-right has-icon is-clearfix">
-                      <input class="input" type="password" minlength="1" maxlength="63" size="63" placeholder="Password" id="holfuy_pass">
-                      <span class="icon is-right" style="pointer-events: auto">
-                        <i class="icon-eye" data-input="holfuy_pass"></i>
-                      </span>
+            <div id="holfuy_fields" style="display: none">
+              <div style="display: none" id="holfuy_template">
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal">
+                    <label class="label">Station's id</label>
+                  </div>
+                  <div class="field-body">
+                    <div class="field">
+                      <div class="control">
+                        <input id="holfuy_id" class="input" type="number" minlength="1" maxlength="4" size="128" placeholder="number">
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                  <label class="label">Station's id</label>
-                </div>
-                <div class="field-body">
-                  <div class="field">
-                    <div class="control">
-                      <input class="input" type="number" minlength="1" maxlength="4" size="128" placeholder="number" id="holfuy_id">
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal">
+                    <label class="label">Station's password</label>
+                  </div>
+                  <div class="field-body">
+                    <div class="field">
+                      <div class="control has-icon-right has-icon is-clearfix">
+                        <input id="holfuy_pass" class="input" type="password" minlength="1" maxlength="63" size="63" placeholder="Password">
+                        <span class="icon is-right" style="pointer-events: auto">
+                          <i class="icon-eye" data-input="holfuy_pass"></i>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                  <label class="label">Min wind speed</label>
-                </div>
-                <div class="field-body">
-                  <div class="field">
-                    <div class="control">
-                      <input class="input" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s" id="holfuy_wind_min">
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal">
+                    <label class="label">Min wind speed</label>
+                  </div>
+                  <div class="field-body">
+                    <div class="field">
+                      <div class="control">
+                        <input id="holfuy_wind_min" class="input" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s">
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                  <label class="label">Max wind speed</label>
-                </div>
-                <div class="field-body">
-                  <div class="field">
-                    <div class="control">
-                      <input class="input" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s" id="holfuy_wind_max">
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal">
+                    <label class="label">Max wind speed</label>
+                  </div>
+                  <div class="field-body">
+                    <div class="field">
+                      <div class="control">
+                        <input id="holfuy_wind_max" class="input" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s">
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                  <label class="label">Wind direction from</label>
-                </div>
-                <div class="field-body">
-                  <div class="field">
-                    <div class="control">
-                      <input class="input" type="number" minlength="1" maxlength="5" size="128" placeholder="degrees" id="holfuy_dir_from">
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal">
+                    <label class="label">Wind direction from</label>
+                  </div>
+                  <div class="field-body">
+                    <div class="field">
+                      <div class="control">
+                        <input id="holfuy_dir_from" class="input" type="number" minlength="1" maxlength="5" size="128" placeholder="degrees">
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                <div class="field is-horizontal">
+                  <div class="field-label is-normal">
+                    <label class="label">Wind direction to</label>
+                  </div>
+                  <div class="field-body">
+                    <div class="field">
+                      <div class="control">
+                        <input id="holfuy_dir_to" class="input" type="number" minlength="1" maxlength="5" size="128" placeholder="degrees">
+                      </div>
+                    </div>
+                    <div>
+                      <button class="button" type="button" id="holfuy_remove">Remove</button>
+                    </div>
+                  </div>
+                </div>
+
+                <br>
               </div>
 
               <div class="field is-horizontal">
-                <div class="field-label is-normal">
-                  <label class="label">Wind direction to</label>
-                </div>
+                <div class="field-label"></div>
                 <div class="field-body">
                   <div class="field">
                     <div class="control">
-                      <input class="input" type="number" minlength="1" maxlength="5" size="128" placeholder="degrees" id="holfuy_dir_to">
+                      <button class="button is-primary" id="add_holfuy" type="button">Add holfuy station</button>
                     </div>
                   </div>
                 </div>
