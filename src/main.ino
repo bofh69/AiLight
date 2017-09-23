@@ -45,7 +45,7 @@ void loadFactoryDefaults() {
   EEPROM.commit();
 
   // Device defaults
-  cfg.ic = INIT_HASH;
+  cfg.ic = INIT_CONFIG_NEW;
   cfg.is_on = LIGHT_STATE;
   cfg.brightness = LIGHT_BRIGHTNESS;
   cfg.color_temp = LIGHT_COLOR_TEMPERATURE;
@@ -57,12 +57,13 @@ void loadFactoryDefaults() {
 
   cfg.holfuy_enabled = HOLFUY_ENABLED;
   os_strcpy(cfg.holfuy_url, HOLFUY_URL);
-  os_strcpy(cfg.holfuy_pass, HOLFUY_PASS);
-  cfg.holfuy_id = HOLFUY_ID;
-  cfg.holfuy_wind_min = HOLFUY_WIND_MIN;
-  cfg.holfuy_wind_max = HOLFUY_WIND_MAX;
-  cfg.holfuy_dir_from = HOLFUY_DIR_FROM;
-  cfg.holfuy_dir_to = HOLFUY_DIR_TO;
+  os_strcpy(cfg.holfuy_stations[0].pass, HOLFUY_PASS);
+  cfg.holfuy_stations[0].id = HOLFUY_ID;
+  cfg.holfuy_stations[0].wind_min = HOLFUY_WIND_MIN;
+  cfg.holfuy_stations[0].wind_max = HOLFUY_WIND_MAX;
+  cfg.holfuy_stations[0].dir_from = HOLFUY_DIR_FROM;
+  cfg.holfuy_stations[0].dir_to = HOLFUY_DIR_TO;
+  cfg.holfuy_nr_stations = 1;
 
   cfg.mqtt_port = MQTT_PORT;
   os_strcpy(cfg.mqtt_server, MQTT_SERVER);
@@ -98,8 +99,29 @@ void loadFactoryDefaults() {
  */
 void setup() {
   EEPROM.begin(SPI_FLASH_SEC_SIZE);
-  EEPROM_read(cfg);
-  if (cfg.ic != INIT_HASH) {
+  EEPROM_read(stored_cfg);
+
+  switch(cfg.ic) {
+  case INIT_CONFIG_NEW:
+    break;
+  case INIT_CONFIG_OLD_42:
+    // Upgrade old configuration. 42 -> Latest.
+    config_t::holfuy_cfg_t ns;
+
+    os_strncpy(ns.pass, stored_cfg.old.holfuy_pass, sizeof(ns.pass)-1);
+    ns.pass[sizeof(ns.pass)-1] = 0;
+    ns.id = stored_cfg.old.holfuy_id;
+    ns.wind_min = stored_cfg.old.holfuy_wind_min;
+    ns.wind_max = stored_cfg.old.holfuy_wind_max;
+    ns.dir_from = stored_cfg.old.holfuy_dir_from;
+    ns.dir_to = stored_cfg.old.holfuy_dir_to;
+
+    os_memcpy(&cfg.holfuy_stations[0], &ns, sizeof(cfg.holfuy_stations[0]));
+
+    cfg.holfuy_nr_stations = 1;
+    cfg.ic = INIT_CONFIG_NEW;
+    break;
+  default:
     loadFactoryDefaults();
   }
 

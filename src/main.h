@@ -53,7 +53,6 @@ extern "C" {
 #include "html.gz.h"
 
 #define EEPROM_START_ADDRESS 0
-#define INIT_HASH 0x42
 static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 #define RECONNECT_TIME 10
 
@@ -80,6 +79,7 @@ static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 
 #define KEY_HOLFUY_ENABLED "switch_holfuy"
 #define KEY_HOLFUY_URL "holfuy_url"
+#define KEY_HOLFUY_STATIONS "holfuy_stations"
 #define KEY_HOLFUY_PASS "holfuy_pass"
 #define KEY_HOLFUY_ID "holfuy_id"
 #define KEY_HOLFUY_WIND_MIN "holfuy_wind_min"
@@ -131,8 +131,11 @@ std::vector<void (*)(uint8_t, const char *, const char *)> _mqtt_callbacks;
 Ticker wifiReconnectTimer;
 Ticker mqttReconnectTimer;
 
+const uint8_t INIT_CONFIG_OLD_42 = 0x42;
+const uint8_t INIT_CONFIG_NEW = 0x43;
+
 // Configuration structure that gets stored to the EEPROM
-struct config_t {
+struct config_42_t {
   uint8_t ic;                 // Initialization check
   bool is_on;                 // Operational state (true == on)
   uint8_t brightness;         // Brightness level
@@ -163,7 +166,52 @@ struct config_t {
   float holfuy_wind_max;      // Maximum wind speed, m/s
   uint16_t holfuy_dir_from;   // The wind direction in degrees.
   uint16_t holfuy_dir_to;     // The wind direction in degrees.
-} cfg;
+};
+
+struct config_t {
+  struct holfuy_cfg_t {
+    char pass[66];      // password
+    uint16_t id;         // Id of station - 101
+    float wind_min;      // Minimum wind speed, m/s
+    float wind_max;      // Maximum wind speed, m/s
+    uint16_t dir_from;   // The wind direction in degrees.
+    uint16_t dir_to;     // The wind direction in degrees.
+  };
+
+  uint8_t ic;                 // Initialization check
+  bool is_on;                 // Operational state (true == on)
+  uint8_t brightness;         // Brightness level
+  uint8_t color_temp;         // Colour temperature
+  Color color;                // RGBW channel levels
+  uint16_t mqtt_port;         // MQTT Broker port
+  char hostname[128];         // Hostname/Identifier
+  char wifi_ssid[32];         // WiFi SSID
+  char wifi_psk[63];          // WiFi Passphrase Key
+  char mqtt_server[128];      // Server/hostname of the MQTT Broker
+  char mqtt_user[64];         // Username used for connecting to the MQTT Broker
+  char mqtt_password[64];     // Password used for connecting to the MQTT Broker
+  char mqtt_state_topic[128]; // MQTT Topic for publishing the state
+  char mqtt_command_topic[128]; // MQTT Topic for receiving commands
+  char mqtt_lwt_topic[128];   // MQTT Topic for publising Last Will and Testament
+  bool gamma;                 // Gamma Correction enabled or not
+  bool mqtt_ha_use_discovery; // Home Assistant MQTT discovery enabled or not
+  bool mqtt_ha_is_discovered; // Has this device already been discovered or not
+  char mqtt_ha_disc_prefix[32]; // MQTT Discovery prefix for Home Assistant
+  bool api;                   // REST API enabled or not
+  char api_key[32];           // API Key
+
+  bool holfuy_enabled;        // Is holfuy service enabled?
+  char holfuy_url[128];       // URL - http://api.holfuy.com/live/
+  holfuy_cfg_t holfuy_stations[8];
+  uint8_t holfuy_nr_stations; // Nr of stations that are used.
+};
+
+union stored_config_t {
+    config_42_t old;
+    config_t current;
+} stored_cfg;
+
+config_t &cfg = stored_cfg.current;
 
 // Globals for flash
 bool flash = false;

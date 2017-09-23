@@ -143,6 +143,7 @@ private:
 static Samples samples(HOLFUY_SAMPLES_TO_KEEP);
 
 class SamplesToColour : public EvaluateSamples<const Samples::Sample &> {
+    const config_t::holfuy_cfg_t &station_cfg;
 public:
     enum colour_t {
         YELLOW,
@@ -151,10 +152,12 @@ public:
         BLUE,
     };
 
+    SamplesToColour(const config_t::holfuy_cfg_t &station_cfg) : station_cfg(station_cfg) {}
+
     virtual void inspect(const Samples::Sample &s) {
         enum colour_t tmp = sample_within_direction(s) ? GREEN : RED;
-        if(s.speed < cfg.holfuy_wind_min) tmp = RED;
-        if(s.speed > cfg.holfuy_wind_max)
+        if(s.speed < station_cfg.wind_min) tmp = RED;
+        if(s.speed > station_cfg.wind_max)
             tmp = (tmp != RED) ? BLUE : RED;
         switch(tmp) {
         case GREEN:
@@ -180,19 +183,19 @@ private:
     colour_t colour = YELLOW;
 
     bool sample_within_direction(const Samples::Sample &s) {
-        if(cfg.holfuy_dir_from < cfg.holfuy_dir_to) {
-            return (s.dir >= cfg.holfuy_dir_from) &&
-                   (s.dir <= cfg.holfuy_dir_to);
+        if(station_cfg.dir_from < station_cfg.dir_to) {
+            return (s.dir >= station_cfg.dir_from) &&
+                   (s.dir <= station_cfg.dir_to);
         } else {
-            return (s.dir >= cfg.holfuy_dir_from) ||
-                   (s.dir <= cfg.holfuy_dir_to);
+            return (s.dir >= station_cfg.dir_from) ||
+                   (s.dir <= station_cfg.dir_to);
         }
     }
 };
 
 static void update_light_colour()
 {
-    SamplesToColour stc;
+    SamplesToColour stc(cfg.holfuy_stations[0]);
     samples.evaluate_samples(stc);
     auto colour = stc.get_result();
     switch(colour) {
@@ -393,7 +396,7 @@ void loopHolfuy()
                      "Host: %s\r\n"
                      "X-Request-Nr: %u\r\n"
                      "Connection: Disconnect\r\n\r\n",
-                     path, cfg.holfuy_pass, cfg.holfuy_id, host, connection);
+                     path, cfg.holfuy_stations[0].pass, cfg.holfuy_stations[0].id, host, connection);
             holfuy.write(request);
             hs_state = HS_RECV_RESPONSE;
         }

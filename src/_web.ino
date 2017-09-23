@@ -100,15 +100,21 @@ void wsStart(uint8_t id) {
 
   settings[KEY_HOLFUY_ENABLED] = cfg.holfuy_enabled;
   if(os_strncmp(HTTP_PREFIX, cfg.holfuy_url, sizeof(HTTP_PREFIX)-1)) {
-      os_strcpy(cfg.holfuy_url, HTTP_PREFIX);
+    os_strcpy(cfg.holfuy_url, HTTP_PREFIX);
   }
   settings[KEY_HOLFUY_URL] = cfg.holfuy_url;
-  settings[KEY_HOLFUY_PASS] = cfg.holfuy_pass;
-  settings[KEY_HOLFUY_ID] = cfg.holfuy_id;
-  settings[KEY_HOLFUY_WIND_MIN] = cfg.holfuy_wind_min;
-  settings[KEY_HOLFUY_WIND_MAX] = cfg.holfuy_wind_max;
-  settings[KEY_HOLFUY_DIR_FROM] = cfg.holfuy_dir_from;
-  settings[KEY_HOLFUY_DIR_TO] = cfg.holfuy_dir_to;
+
+  JsonArray &stations = settings.createNestedArray(KEY_HOLFUY_STATIONS);
+  for(int i = 0; i < cfg.holfuy_nr_stations; i++) {
+    JsonObject &station = jsonBuffer.createObject();
+    station[KEY_HOLFUY_PASS] = cfg.holfuy_stations[i].pass;
+    station[KEY_HOLFUY_ID] = cfg.holfuy_stations[i].id;
+    station[KEY_HOLFUY_WIND_MIN] = cfg.holfuy_stations[i].wind_min;
+    station[KEY_HOLFUY_WIND_MAX] = cfg.holfuy_stations[i].wind_max;
+    station[KEY_HOLFUY_DIR_FROM] = cfg.holfuy_stations[i].dir_from;
+    station[KEY_HOLFUY_DIR_TO] = cfg.holfuy_stations[i].dir_to;
+    stations.add(station);
+  }
 
   settings[KEY_MQTT_SERVER] = cfg.mqtt_server;
   settings[KEY_MQTT_PORT] = cfg.mqtt_port;
@@ -211,60 +217,76 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
       }
     }
 
-    if (settings.containsKey(KEY_HOLFUY_PASS)) {
-      const char *holfuy_pass = settings[KEY_HOLFUY_PASS];
-      if (os_strcmp(cfg.holfuy_pass, holfuy_pass) != 0) {
-        os_strcpy(cfg.holfuy_pass, holfuy_pass);
-        holfuy_changed = true;
-      }
-    }
+    if (settings.containsKey(KEY_HOLFUY_STATIONS)) {
 
-    if (settings.containsKey(KEY_HOLFUY_ID)) {
-      uint16_t holfuy_id = (os_strlen(settings[KEY_HOLFUY_ID]) > 0)
-                               ? settings[KEY_HOLFUY_ID]
-                               : HOLFUY_ID;
-      if (cfg.holfuy_id != holfuy_id) {
-        cfg.holfuy_id = holfuy_id;
-        holfuy_changed = true;
-      }
-    }
+      uint8_t i = 0;
+      for(auto v : settings[KEY_HOLFUY_STATIONS].as<JsonArray&>()) {
+        if(i >= (sizeof(cfg.holfuy_stations)/sizeof(cfg.holfuy_stations[0])))
+            break;
+        config_t::holfuy_cfg_t &station = cfg.holfuy_stations[i];
+        const JsonObject &val = v.as<JsonObject&>();
 
-    if (settings.containsKey(KEY_HOLFUY_WIND_MIN)) {
-      float holfuy_wind_min = (os_strlen(settings[KEY_HOLFUY_WIND_MIN]) > 0)
-                               ? settings[KEY_HOLFUY_WIND_MIN]
-                               : HOLFUY_WIND_MIN;
-      if (cfg.holfuy_wind_min != holfuy_wind_min) {
-        cfg.holfuy_wind_min = holfuy_wind_min;
-        holfuy_changed = true;
-      }
-    }
+        if (val.containsKey(KEY_HOLFUY_PASS)) {
+          const char *holfuy_pass = val[KEY_HOLFUY_PASS];
+          if (os_strcmp(station.pass, holfuy_pass) != 0) {
+            os_strcpy(station.pass, holfuy_pass);
+            holfuy_changed = true;
+          }
+        }
 
-    if (settings.containsKey(KEY_HOLFUY_WIND_MAX)) {
-      float holfuy_wind_max = (os_strlen(settings[KEY_HOLFUY_WIND_MAX]) > 0)
-                               ? settings[KEY_HOLFUY_WIND_MAX]
-                               : HOLFUY_WIND_MAX;
-      if (cfg.holfuy_wind_max != holfuy_wind_max) {
-        cfg.holfuy_wind_max = holfuy_wind_max;
-        holfuy_changed = true;
-      }
-    }
+        if (val.containsKey(KEY_HOLFUY_ID)) {
+          uint16_t holfuy_id = (os_strlen(val[KEY_HOLFUY_ID]) > 0)
+                                 ? val[KEY_HOLFUY_ID]
+                                 : HOLFUY_ID;
+          if (station.id != holfuy_id) {
+            station.id = holfuy_id;
+            holfuy_changed = true;
+          }
+        }
 
-    if (settings.containsKey(KEY_HOLFUY_DIR_FROM)) {
-      uint16_t holfuy_dir_from = (os_strlen(settings[KEY_HOLFUY_DIR_FROM]) > 0)
-                               ? settings[KEY_HOLFUY_DIR_FROM]
-                               : HOLFUY_DIR_FROM;
-      if (cfg.holfuy_dir_from != holfuy_dir_from) {
-        cfg.holfuy_dir_from = holfuy_dir_from;
-        holfuy_changed = true;
-      }
-    }
+        if (val.containsKey(KEY_HOLFUY_WIND_MIN)) {
+          float holfuy_wind_min = (os_strlen(val[KEY_HOLFUY_WIND_MIN]) > 0)
+                                   ? val[KEY_HOLFUY_WIND_MIN]
+                                   : HOLFUY_WIND_MIN;
+          if (station.wind_min != holfuy_wind_min) {
+            station.wind_min = holfuy_wind_min;
+            holfuy_changed = true;
+          }
+        }
 
-    if (settings.containsKey(KEY_HOLFUY_DIR_TO)) {
-      uint16_t holfuy_dir_to = (os_strlen(settings[KEY_HOLFUY_DIR_TO]) > 0)
-                               ? settings[KEY_HOLFUY_DIR_TO]
-                               : HOLFUY_DIR_TO;
-      if (cfg.holfuy_dir_to != holfuy_dir_to) {
-        cfg.holfuy_dir_to = holfuy_dir_to;
+        if (val.containsKey(KEY_HOLFUY_WIND_MAX)) {
+          float holfuy_wind_max = (os_strlen(val[KEY_HOLFUY_WIND_MAX]) > 0)
+                                   ? val[KEY_HOLFUY_WIND_MAX]
+                                   : HOLFUY_WIND_MAX;
+          if (station.wind_max != holfuy_wind_max) {
+            station.wind_max = holfuy_wind_max;
+            holfuy_changed = true;
+          }
+        }
+
+        if (val.containsKey(KEY_HOLFUY_DIR_FROM)) {
+          uint16_t holfuy_dir_from = (os_strlen(val[KEY_HOLFUY_DIR_FROM]) > 0)
+                                   ? val[KEY_HOLFUY_DIR_FROM]
+                                   : HOLFUY_DIR_FROM;
+          if (station.dir_from != holfuy_dir_from) {
+            station.dir_from = holfuy_dir_from;
+            holfuy_changed = true;
+          }
+        }
+
+        if (val.containsKey(KEY_HOLFUY_DIR_TO)) {
+          uint16_t holfuy_dir_to = (os_strlen(val[KEY_HOLFUY_DIR_TO]) > 0)
+                                   ? val[KEY_HOLFUY_DIR_TO]
+                                   : HOLFUY_DIR_TO;
+          if (station.dir_to != holfuy_dir_to) {
+            station.dir_to = holfuy_dir_to;
+            holfuy_changed = true;
+          }
+        }
+        ++i;
+      }
+      if(cfg.holfuy_nr_stations != i) {
+        cfg.holfuy_nr_stations = i;
         holfuy_changed = true;
       }
     }
