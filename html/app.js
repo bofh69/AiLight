@@ -315,11 +315,9 @@ function processData(data) {
           hSwitch.setState(data[key][s]);
 
           let hf = document.getElementById(HF_FIELDS);
-          if (!data[key][s]) {
-            hf.style.display = "none";
-          }
+          hf.style.display = (data[key][s]) ? '' : 'none';
         }
-        if (s === 'holfuy') {
+        if (s === 'holfuy_stations') {
           let hf = document.getElementById(HF_FIELDS);
           while(hf.children.length > 2) {
             hf.removeChild(hf.children[1]);
@@ -329,8 +327,9 @@ function processData(data) {
           let stations = data[key][s];
           for(let i = 0; i < stations.length; i++) {
             let station = addHolfuy();
+            let nr = station.querySelectorAll("input")[0].id.split('.')[0];
             for(let hf in stations[i]) {
-              let el = document.getElementById('' + i + '.' + hf);
+              let el = document.getElementById('' + nr + '.' + hf);
               el.value = stations[i][hf];
             }
           }
@@ -669,7 +668,7 @@ function save() {
 
   let stations = document.getElementById(HF_FIELDS).children;
   if(stations.length > 2) {
-    s['holfuy'] = [];
+    s['holfuy_stations'] = [];
     for(let i = 1; i < stations.length-1; i++) {
       let station = {};
       inputs = stations[i].getElementsByTagName('input');
@@ -683,14 +682,16 @@ function save() {
           continue;
         }
       }
-      s['holfuy'].push(station);
+      s['holfuy_stations'].push(station);
     }
   }
 
   if (isValid) {
     msg.s = s;
+    console.log('Sending new cfg: ', msg);
     sendMsg(msg);
   }
+  return false;
 }
 
 let station_nr = 0;
