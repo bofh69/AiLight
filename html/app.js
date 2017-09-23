@@ -626,7 +626,7 @@ function save() {
         p.removeChild(item);
       });
 
-      if(id.startsWith('holfuy')) continue;
+      if(id !== 'holfuy_url' && id.startsWith('holfuy')) continue;
 
       // Validate hostname input
       if (id === 'hostname' && !Valid952HostnameRegex.test(inputs[i].value)) {
@@ -700,6 +700,7 @@ function addHolfuy()
 {
   let ht = document.getElementById(HF_TEMPL).cloneNode(true);
   let hf = document.getElementById(HF_FIELDS);
+  if(hf.children.length >= 10) return ht; // Max 8 stations.
   let nr = station_nr++;
   let inputs = ht.getElementsByTagName('input');
   for (let i = 0; i < inputs.length; i++) {
@@ -837,9 +838,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('nav-toggle').addEventListener('click', toggleNav, {
     passive: true
   });
-  document.getElementById('save').addEventListener('click', save, {
-    passive: true
-  });
+  document.getElementById('save').addEventListener('click', save);
   document.getElementById('add_holfuy').addEventListener('click', addHolfuyClick, {
     passive: true
   });
