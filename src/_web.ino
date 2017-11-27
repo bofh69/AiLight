@@ -214,7 +214,7 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
       const char *holfuy_url = settings[KEY_HOLFUY_URL];
       // TODO: Validate URL
       if ((os_strcmp(cfg.holfuy_url, holfuy_url) != 0) &&
-          (os_strlen(holfuy_url) < sizeof(cfg.holfuy_url))) {
+          ((size_t)os_strlen(holfuy_url) < sizeof(cfg.holfuy_url))) {
         os_strcpy(cfg.holfuy_url, holfuy_url);
         holfuy_changed = true;
       }
@@ -223,7 +223,7 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
     if (settings.containsKey(KEY_HOLFUY_WIND_SPEED_UNIT)) {
       const char *holfuy_wind_speed_unit = settings[KEY_HOLFUY_WIND_SPEED_UNIT];
       if ((os_strcmp(cfg.holfuy_wind_speed_unit, holfuy_wind_speed_unit) != 0) &&
-          (os_strlen(holfuy_wind_speed_unit) < sizeof(cfg.holfuy_wind_speed_unit))) {
+          ((size_t)os_strlen(holfuy_wind_speed_unit) < sizeof(cfg.holfuy_wind_speed_unit))) {
         os_strcpy(cfg.holfuy_wind_speed_unit, holfuy_wind_speed_unit);
         holfuy_changed = true;
       }
