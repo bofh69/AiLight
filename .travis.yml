@@ -11,7 +11,7 @@ addons:
     packages:
     - npm
 install:
-  - pip install -U platformio
+  - pip install -U https://github.com/platformio/platformio-core/archive/develop.zip
   - npm update
   - npm install -g gulp-cli
   - npm install
