@@ -60,6 +60,7 @@
 #define HOLFUY_WIND_MAX 7.5
 #define HOLFUY_DIR_FROM 270
 #define HOLFUY_DIR_TO   30
+#define HOLFUY_WIND_SPEED_UNIT "m_s"
 
 /**
  * MQTT

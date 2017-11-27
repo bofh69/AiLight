@@ -64,6 +64,7 @@ void loadFactoryDefaults() {
   cfg.holfuy_stations[0].dir_from = HOLFUY_DIR_FROM;
   cfg.holfuy_stations[0].dir_to = HOLFUY_DIR_TO;
   cfg.holfuy_nr_stations = 1;
+  os_strcpy(cfg.holfuy_wind_speed_unit, HOLFUY_WIND_SPEED_UNIT);
 
   cfg.mqtt_port = MQTT_PORT;
   os_strcpy(cfg.mqtt_server, MQTT_SERVER);

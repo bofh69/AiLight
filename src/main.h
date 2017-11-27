@@ -79,6 +79,7 @@ static const int BUFFER_SIZE = JSON_OBJECT_SIZE(10);
 
 #define KEY_HOLFUY_ENABLED "switch_holfuy"
 #define KEY_HOLFUY_URL "holfuy_url"
+#define KEY_HOLFUY_WIND_SPEED_UNIT "holfuy_wind_speed_unit"
 #define KEY_HOLFUY_STATIONS "holfuy_stations"
 #define KEY_HOLFUY_PASS "holfuy_pass"
 #define KEY_HOLFUY_ID "holfuy_id"
@@ -132,7 +133,7 @@ Ticker wifiReconnectTimer;
 Ticker mqttReconnectTimer;
 
 const uint8_t INIT_CONFIG_OLD_42 = 0x42;
-const uint8_t INIT_CONFIG_NEW = 0x43;
+const uint8_t INIT_CONFIG_NEW = 0x44;
 
 // Configuration structure that gets stored to the EEPROM
 struct config_42_t {
@@ -204,6 +205,7 @@ struct config_t {
   char holfuy_url[128];       // URL - http://api.holfuy.com/live/
   holfuy_cfg_t holfuy_stations[8];
   uint8_t holfuy_nr_stations; // Nr of stations that are used.
+  char holfuy_wind_speed_unit[6]; // "knots"
 };
 
 union stored_config_t {

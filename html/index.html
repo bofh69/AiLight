@@ -199,14 +199,31 @@
                 <div class="field">
                   <div class="control">
                     <label class="switch is-primary">
-                    <input type="checkbox" name="state" id="switch_holfuy">
-                  </label>
-                </div>
+                      <input type="checkbox" name="state" id="switch_holfuy">
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div id="holfuy_fields" style="display: none">
+              <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                  <label class="label">Speed unit</label>
+                </div>
+                <div class="field-body">
+                  <div class="field">
+                    <div class="control">
+                      <select name="holfuy_wind_speed_unit" id="holfuy_wind_speed_unit">
+                        <option value="m_s">m/s</option>
+                        <option value="km_h">km/h</option>
+                        <option value="knots">Knots</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div style="display: none" id="holfuy_template">
                 <div class="field is-horizontal">
                   <div class="field-label is-normal">
@@ -244,7 +261,7 @@
                   <div class="field-body">
                     <div class="field">
                       <div class="control">
-                        <input id="holfuy_wind_min" class="input" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s">
+                        <input id="holfuy_wind_min" class="input speed" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s">
                       </div>
                     </div>
                   </div>
@@ -257,7 +274,7 @@
                   <div class="field-body">
                     <div class="field">
                       <div class="control">
-                        <input id="holfuy_wind_max" class="input" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s">
+                        <input id="holfuy_wind_max" class="input speed" type="number" step="0.1" minlength="1" maxlength="4" size="128" placeholder="m/s">
                       </div>
                     </div>
                   </div>

@@ -104,6 +104,8 @@ void wsStart(uint8_t id) {
   }
   settings[KEY_HOLFUY_URL] = cfg.holfuy_url;
 
+  settings[KEY_HOLFUY_WIND_SPEED_UNIT] = cfg.holfuy_wind_speed_unit;
+
   JsonArray &stations = settings.createNestedArray(KEY_HOLFUY_STATIONS);
   for(int i = 0; i < cfg.holfuy_nr_stations; i++) {
     JsonObject &station = jsonBuffer.createObject();
@@ -211,8 +213,18 @@ void wsProcessMessage(uint8_t num, char *payload, size_t length) {
     if (settings.containsKey(KEY_HOLFUY_URL)) {
       const char *holfuy_url = settings[KEY_HOLFUY_URL];
       // TODO: Validate URL
-      if (os_strcmp(cfg.holfuy_url, holfuy_url) != 0) {
+      if ((os_strcmp(cfg.holfuy_url, holfuy_url) != 0) &&
+          (os_strlen(holfuy_url) < sizeof(cfg.holfuy_url))) {
         os_strcpy(cfg.holfuy_url, holfuy_url);
+        holfuy_changed = true;
+      }
+    }
+
+    if (settings.containsKey(KEY_HOLFUY_WIND_SPEED_UNIT)) {
+      const char *holfuy_wind_speed_unit = settings[KEY_HOLFUY_WIND_SPEED_UNIT];
+      if ((os_strcmp(cfg.holfuy_wind_speed_unit, holfuy_wind_speed_unit) != 0) &&
+          (os_strlen(holfuy_wind_speed_unit) < sizeof(cfg.holfuy_wind_speed_unit))) {
+        os_strcpy(cfg.holfuy_wind_speed_unit, holfuy_wind_speed_unit);
         holfuy_changed = true;
       }
     }

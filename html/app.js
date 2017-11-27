@@ -25,6 +25,7 @@ const K_W = "white_value";
 const K_GM = "gamma";
 const K_HD = "ha_discovery";
 const K_RA = "rest_api";
+const K_WU = "holfuy_wind_speed_unit";
 const HF_FIELDS = "holfuy_fields";
 const HF_TEMPL = "holfuy_template";
 
@@ -44,6 +45,11 @@ const WAIT = 10000;
 function Switch(id, du = true) {
   this.id = id;
   this.du = du;
+  this.init();
+}
+
+function WindUnit(id) {
+  this.id = id;
   this.init();
 }
 
@@ -144,6 +150,88 @@ function sendMsg(msg) {
 
 }).call(Switch.prototype);
 
+(function() {
+
+  this.convert_from_ms = function(new_unit, v) {
+    if(new_unit == 'knots') {
+      v *= 1.943844;
+    } else if(new_unit == 'km_h') {
+      v *= 3.6;
+    }
+    return +v;
+  };
+
+  this.convert_to_ms = function(from_unit, v) {
+    if(from_unit == 'knots') {
+      v /= 1.943844;
+    } else if(from_unit == 'km_h') {
+      v /= 3.6;
+    }
+    return +v;
+  };
+
+  this.set_placeholders = function(new_unit_text) {
+    d = document.querySelectorAll("input.speed");
+    [].forEach.call(d, function(item) {
+      item.placeholder = new_unit_text;
+    });
+  };
+
+  this.update_speeds = function(old_unit, new_unit) {
+    let d = document.querySelectorAll("input.speed");
+    var that = this;
+    [].forEach.call(d, function(item) {
+      var new_value = item.value;
+      if(new_value !== "") {
+        // Convert to m_s:
+        new_value = that.convert_to_ms(old_unit, new_value);
+        // Convert to the new unit:
+        new_value = that.convert_from_ms(new_unit, new_value);
+        // Round to suitable # digits.
+        item.value = +new_value.toFixed(1);
+      }
+    });
+  };
+
+  this.set_from_cfg = function(new_unit) {
+    var i = 0;
+    windUnit.update_speeds('m_s', new_unit);
+    [].forEach.call(windUnit.el.options, function(option) {
+      if(option.value == new_unit) {
+        windUnit.el.selectedIndex = i;
+      }
+      i++;
+    });
+    windUnit.set_placeholders(windUnit.el.selectedOptions[0].text);
+  };
+
+  this.changeUnit = function() {
+    var new_unit = this.el.selectedOptions[0].value;
+    var old_unit = this.unit;
+    var that = this;
+    if(new_unit != old_unit) {
+      var new_unit_text = this.el.selectedOptions[0].text;
+
+      // Update all speeds.
+      this.update_speeds(old_unit, new_unit);
+
+      // Update all placeholders.
+      this.set_placeholders(new_unit_text);
+
+      this.unit = new_unit;
+    }
+  };
+
+  this.init = function() {
+    this.el = document.getElementById(K_WU);
+    this.unit = this.el.selectedOptions[0].value;
+    this.el.addEventListener('change', this.changeUnit.bind(this), {
+      passive: true
+    });
+  };
+
+}).call(WindUnit.prototype);
+
 /**
  * Object representing a Slider component
  *
@@ -229,6 +317,7 @@ let hdSwitch = new Switch(K_HD, false);
 let raSwitch = new Switch(K_RA, false);
 let hSwitch = new Switch(K_H, false);
 let hS = false;
+let windUnit = new WindUnit(K_WU);
 
 /**
  * Sends the RGB triplet state to the connected WebSocket clients
@@ -319,8 +408,8 @@ function processData(data) {
         }
         if (s === 'holfuy_stations') {
           let hf = document.getElementById(HF_FIELDS);
-          while(hf.children.length > 2) {
-            hf.removeChild(hf.children[1]);
+          while(hf.children.length > 3) {
+            hf.removeChild(hf.children[2]);
             hf = document.getElementById(HF_FIELDS);
           }
 
@@ -387,6 +476,10 @@ function processData(data) {
 
     if (key === K_GM) {
       gmSwitch.setState(data[key]);
+    }
+    if (key === K_WU) {
+      var new_unit = data[key];
+      windUnit.set_from_cfg(new_unit);
     }
   }
 }
@@ -626,7 +719,8 @@ function save() {
         p.removeChild(item);
       });
 
-      if(id !== 'holfuy_url' && id.startsWith('holfuy')) continue;
+      if(id !== 'holfuy_url' &&
+         id.startsWith('holfuy')) continue;
 
       // Validate hostname input
       if (id === 'hostname' && !Valid952HostnameRegex.test(inputs[i].value)) {
@@ -665,11 +759,12 @@ function save() {
       s[id] = (inputs[i].type === 'checkbox') ? inputs[i].checked : inputs[i].value;
     }
   }
+  s[K_WU] = windUnit.unit;
 
   let stations = document.getElementById(HF_FIELDS).children;
-  if(stations.length > 2) {
+  if(stations.length > 3) {
     s['holfuy_stations'] = [];
-    for(let i = 1; i < stations.length-1; i++) {
+    for(let i = 2; i < stations.length-1; i++) {
       let station = {};
       inputs = stations[i].getElementsByTagName('input');
       for (let i = 0; i < inputs.length; i++) {
@@ -681,6 +776,9 @@ function save() {
           isValid = false;
           continue;
         }
+        if(inputs[i].classList.contains('speed')) {
+          station[id] = windUnit.convert_to_ms(windUnit.unit, station[id]);
+        }
       }
       s['holfuy_stations'].push(station);
     }
@@ -689,6 +787,7 @@ function save() {
   if (isValid) {
     msg.s = s;
     console.log('Sending new cfg: ', msg);
+    alert(msg);
     sendMsg(msg);
   }
   return false;
