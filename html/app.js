@@ -787,7 +787,6 @@ function save() {
   if (isValid) {
     msg.s = s;
     console.log('Sending new cfg: ', msg);
-    alert(msg);
     sendMsg(msg);
   }
   return false;
