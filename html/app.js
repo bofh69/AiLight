@@ -203,6 +203,7 @@ function sendMsg(msg) {
       i++;
     });
     windUnit.set_placeholders(windUnit.el.selectedOptions[0].text);
+    windUnit.unit = new_unit;
   };
 
   this.changeUnit = function() {
@@ -384,6 +385,7 @@ function processData(data) {
 
     // Process settings
     if (key === 's') {
+      var new_unit = null;
       document.title += ' - ' + data[key].hostname;
 
       // Bind data to DOM
@@ -443,6 +445,13 @@ function processData(data) {
             ap.style.display = "none";
           }
         }
+
+        if (s === K_WU) {
+          new_unit = data[key][s];
+        }
+      }
+      if(new_unit !== null) {
+        windUnit.set_from_cfg(new_unit);
       }
     }
 
@@ -476,10 +485,6 @@ function processData(data) {
 
     if (key === K_GM) {
       gmSwitch.setState(data[key]);
-    }
-    if (key === K_WU) {
-      var new_unit = data[key];
-      windUnit.set_from_cfg(new_unit);
     }
   }
 }
