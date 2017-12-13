@@ -18,6 +18,7 @@ install:
 script:
   - cp platformio.example.ini platformio.ini
   - cp src/config.example.h src/config.h
+  - platformio run || true
   - platformio upgrade
   - platformio update
   - platformio run
