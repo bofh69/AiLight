@@ -18,6 +18,7 @@ install:
 script:
   - cp platformio.example.ini platformio.ini
   - cp src/config.example.h src/config.h
+  - ./bin/update_version.sh $TRAVIS_TAG
   - platformio run || true
   - platformio upgrade
   - platformio update
