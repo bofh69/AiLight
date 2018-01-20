@@ -15,6 +15,7 @@
 #include <ESPAsyncTCP.h>
 
  namespace holfuy {
+     static AsyncClient sock;
 
      enum colour_t {
          NONE,
@@ -296,7 +297,6 @@
              HS_RECV_RESPONSE,
          } holfuy_state_t;
 
-         AsyncClient holfuy;
          holfuy_state_t hs_state;
 
          HttpResponseParser<HolfuyCsvResponseParser> *recvParser;
@@ -324,11 +324,11 @@
                  case HS_CONNECTING:
                  case HS_SEND_HEADER:
                      /* Should not be able to happen. */
-                     holfuy.close();
+                     sock.close();
                      break;
                  case HS_RECV_RESPONSE:
                      if(!recvParser->parse(*data)) {
-                         holfuy.close();
+                         sock.close();
                      }
                      break;
                  }
@@ -389,18 +389,18 @@
              if((lastMillis + HOLFUY_TIME_BETWEEN_SAMPLES) < current) {
                  lastMillis = current;
 
-                 if(holfuy.connected()) {
-                     holfuy.close(true);
+                 if(sock.connected()) {
+                     sock.close(true);
                  }
                  if(recvParser) delete recvParser;
                  recvParser = new HttpResponseParser<HolfuyCsvResponseParser>(new HolfuyCsvResponseParser(samples, *this));
-                 holfuy.onData(onData, this);
-                 holfuy.onDisconnect(onDisconnect, this);
+                 sock.onData(onData, this);
+                 sock.onDisconnect(onDisconnect, this);
                  connection++;
                  char host[128];
                  int port;
                  get_host_and_port(sizeof(host), host, &port, NULL);
-                 holfuy.connect(host, port);
+                 sock.connect(host, port);
                  hs_state = HS_CONNECTING;
              }
 
@@ -411,12 +411,12 @@
                  /* Nothing to do here */
                  break;
              case HS_CONNECTING:
-                 if(holfuy.connected()) {
+                 if(sock.connected()) {
                      hs_state = HS_SEND_HEADER;
                  }
                  break;
              case HS_SEND_HEADER:
-                 if(holfuy.canSend()) {
+                 if(sock.canSend()) {
                      char host[128];
                      const char *path;
                      get_host_and_port(sizeof(host), host, NULL, &path);
@@ -430,7 +430,7 @@
                      "X-Request-Nr: %u\r\n"
                      "Connection: Disconnect\r\n\r\n",
                      path, config.pass, config.id, host, connection);
-                     holfuy.write(request);
+                     sock.write(request);
                      hs_state = HS_RECV_RESPONSE;
                  }
                  break;
